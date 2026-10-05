@@ -1,5 +1,16 @@
 # Changelog
 
+## Unreleased
+
+### Changed
+- Updated Next.js and `eslint-config-next` to 16.3.8, and React / React DOM to 19.3.0.
+- Updated ESLint to 10.12.0, the ESLint compatibility packages, and Node / React type definitions.
+- Refreshed dependency locks and aligned the documented Node.js requirement with the development toolchain.
+- Kept TypeScript at 6.0.3 because the current TypeScript ESLint integration does not yet support TypeScript 7.
+
+### Known Issues
+- The development-only ESLint dependency chain still includes `braces` 3.0.3, affected by GHSA-vfj7-8cjw-p6xm; no patched release is available. The production dependency audit is clean.
+
 ## 3.7.0 - 2026-08-16
 
 ### Added

@@ -94,8 +94,8 @@ Floppyy occasionally fights back. A few things to try — the full list lives in
 
 ## Tech Stack
 
-- **Next.js 16.3** — App Router, Turbopack
-- **React 19.2** — concurrent features
+- **Next.js 16.3.8** — App Router, Turbopack
+- **React 19.3** — concurrent features
 - **TypeScript 6.0** — strict type safety
 - **Tailwind CSS 4.3** — utility-first styling + custom Win98 CSS
 - **ESLint 10** — linting with the Next.js flat-config compatibility layer
@@ -108,11 +108,12 @@ Floppyy occasionally fights back. A few things to try — the full list lives in
 
 ## Getting Started
 
-> Requires Node.js 20.9.0 or later.
+> Requires Node.js 20.19+ (20.x), 22.13+ (22.x), or 24+. Node.js 24 LTS is recommended for production.
+> TypeScript stays on 6.0 until the Next.js TypeScript ESLint integration supports TypeScript 7.
 
 ```bash
 # Install dependencies
-npm install
+npm ci
 
 # Development server
 npm run dev
