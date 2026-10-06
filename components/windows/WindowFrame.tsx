@@ -19,14 +19,16 @@ type Props = {
 export function WindowFrame({ window, active, children, onFocus, onClose, onMinimize, onMaximize, onMove, onResize }: Props) {
   const drag = useRef<{ dx: number; dy: number } | null>(null);
   const resize = useRef<{ x: number; y: number; width: number; height: number } | null>(null);
+  const viewportWidth = "min(100vw, var(--viewport-width, 100vw))";
+  const viewportHeight = "min(100dvh, var(--viewport-height, 100dvh))";
 
   const style = window.maximized
-    ? { left: "var(--viewport-left, 0px)", top: "var(--viewport-top, 0px)", width: "var(--viewport-width, 100vw)", height: "calc(var(--viewport-height, 100dvh) - 28px)", zIndex: window.zIndex }
+    ? { left: "var(--viewport-left, 0px)", top: "var(--viewport-top, 0px)", width: viewportWidth, height: `calc(${viewportHeight} - 28px)`, zIndex: window.zIndex }
     : {
-        left: `clamp(calc(var(--viewport-left, 0px) + 8px), ${window.x}px, calc(var(--viewport-left, 0px) + var(--viewport-width, 100vw) - min(${window.width}px, var(--viewport-width, 100vw) - 16px) - 8px))`,
-        top: `clamp(calc(var(--viewport-top, 0px) + 8px), ${window.y}px, calc(var(--viewport-top, 0px) + var(--viewport-height, 100dvh) - min(${window.height}px, var(--viewport-height, 100dvh) - 44px) - 36px))`,
-        width: `min(${window.width}px, var(--viewport-width, 100vw) - 16px)`,
-        height: `min(${window.height}px, var(--viewport-height, 100dvh) - 44px)`,
+        left: `clamp(calc(var(--viewport-left, 0px) + 8px), ${window.x}px, calc(var(--viewport-left, 0px) + ${viewportWidth} - min(${window.width}px, ${viewportWidth} - 16px) - 8px))`,
+        top: `clamp(calc(var(--viewport-top, 0px) + 8px), ${window.y}px, calc(var(--viewport-top, 0px) + ${viewportHeight} - min(${window.height}px, ${viewportHeight} - 44px) - 36px))`,
+        width: `min(${window.width}px, ${viewportWidth} - 16px)`,
+        height: `min(${window.height}px, ${viewportHeight} - 44px)`,
         zIndex: window.zIndex,
       };
 

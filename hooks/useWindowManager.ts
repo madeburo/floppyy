@@ -210,8 +210,8 @@ export function useWindowManager() {
 
   useEffect(() => {
     const updateVisualBounds = () => {
-      const viewport = window.visualViewport;
-      if (viewport && viewport.scale !== 1) return;
+      // Pinch zoom should keep layout coordinates, never stale pre-resize bounds.
+      const viewport = Math.abs((window.visualViewport?.scale ?? 1) - 1) < 0.01 ? window.visualViewport : null;
       const bounds = { width: viewport?.width ?? window.innerWidth, height: viewport?.height ?? window.innerHeight, left: viewport?.offsetLeft ?? 0, top: viewport?.offsetTop ?? 0 };
       for (const [key, value] of Object.entries(bounds)) document.documentElement.style.setProperty(`--viewport-${key}`, `${value}px`);
     };

@@ -68,6 +68,7 @@ test("Solitaire fits narrow viewports without a grey footer", async ({ page }) =
     await page.setViewportSize({ width, height: 568 });
     const table = page.getByTestId("solitaire-table");
     await expect(table).toBeVisible();
+    await expect.poll(() => table.evaluate(node => node.closest('[role="dialog"]')!.getBoundingClientRect().right)).toBeLessThanOrEqual(width);
     await expect.poll(() => table.evaluate(node => node.scrollWidth - node.clientWidth)).toBeLessThanOrEqual(1);
     const geometry = await table.evaluate(node => {
       const win = node.closest('[role="dialog"]')!;
