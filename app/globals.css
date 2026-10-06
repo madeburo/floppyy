@@ -6,8 +6,8 @@
   .start-submenu { left: var(--menu-left); top: var(--menu-top); }
 }
 @media (pointer: coarse), (max-width: 639px) {
-  .window-title-bar { min-height: 44px; font-size: 12px; }
-  .window-title-bar button { min-width: 36px; min-height: 36px; }
+  .window-title-bar { min-height: 22px; font-size: 12px; }
+  .window-title-bar button { min-width: 18px; min-height: 18px; }
   .game-touch-controls { display: flex; }
   .game-menu-bar { min-height: 32px; }
   .game-menu-bar > div > button { min-height: 30px; }
