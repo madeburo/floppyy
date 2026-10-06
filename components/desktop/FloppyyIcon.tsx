@@ -10,7 +10,7 @@ type Props = {
 export function FloppyyIcon({ type, size = 32 }: Props) {
   const [useFallback, setUseFallback] = useState(false);
   const s = size;
-  const source = type === "support" ? "/support/floppyy.png" : `/icons/${type}.png`;
+  const source = `/icons/${type}.png`;
 
   if (!useFallback) {
     return (

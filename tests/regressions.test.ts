@@ -3,7 +3,9 @@ import assert from "node:assert/strict";
 import { checkersMoves, checkersMovesForPiece, applyCheckersMove, type Piece } from "../lib/games/checkers";
 import { solitaireLayout } from "../lib/games/solitaireLayout";
 import { fitWindow, initialWindowSize } from "../lib/windowGeometry";
-import { windowDefinitions } from "../lib/windows";
+import { desktopIcons, windowDefinitions } from "../lib/windows";
+import { commands } from "../lib/commands";
+import { projects } from "../lib/projects";
 import { mergeGuestbookMessages } from "../lib/guestbook/client";
 import type { GuestbookMessage } from "../lib/guestbook/types";
 import { GAME_REGISTRY } from "../lib/gameRegistry";
@@ -74,4 +76,22 @@ test("Guest Book paged and stale snapshots retain newer local posts", () => {
 test("game catalog has unique executable names and valid windows", () => {
   assert.equal(new Set(GAME_REGISTRY.map(game => game.id)).size, GAME_REGISTRY.length);
   for (const game of GAME_REGISTRY) { assert.ok(game.label.endsWith(".exe")); assert.ok(windowDefinitions[game.id]); }
+});
+
+test("retired support entries and GitHub project links are not exposed", () => {
+  assert.equal("support" in windowDefinitions, false);
+  assert.equal("support" in commands, false);
+  assert.equal(desktopIcons.some(icon => icon.id === "support"), false);
+  for (const project of projects) {
+    assert.equal("github" in project, false);
+    assert.equal(new URL(project.site).protocol, "https:");
+  }
+});
+
+test("projects show UsageNow, Brewwery, and OpenModels in the requested order", () => {
+  assert.deepEqual(projects.map(project => project.name), ["UsageNow", "Brewwery", "OpenModels"]);
+  assert.deepEqual(projects.map(project => project.slug), ["usagenow", "brewwery", "openmodels"]);
+  assert.equal(projects[0].site, "https://www.usagenow.com");
+  assert.equal(projects[0].description, "AI coding usage tracker for macOS. Limits, resets, and activity for Codex, Claude, Gemini, Grok and more");
+  assert.equal(projects[0].details, projects[0].description);
 });

@@ -5,11 +5,19 @@ export type Project = {
   status: string;
   stack: string[];
   site: string;
-  github: string;
   details: string;
 };
 
 export const projects: Project[] = [
+  {
+    slug: "usagenow",
+    name: "UsageNow",
+    description: "AI coding usage tracker for macOS. Limits, resets, and activity for Codex, Claude, Gemini, Grok and more",
+    status: "Online",
+    stack: ["macOS", "AI Coding", "Usage Tracking"],
+    site: "https://www.usagenow.com",
+    details: "AI coding usage tracker for macOS. Limits, resets, and activity for Codex, Claude, Gemini, Grok and more",
+  },
   {
     slug: "brewwery",
     name: "Brewwery",
@@ -17,18 +25,7 @@ export const projects: Project[] = [
     status: "Online",
     stack: ["macOS", "Homebrew", "Desktop"],
     site: "https://www.brewwery.com",
-    github: "https://github.com/brewwery/brewwery",
     details: "GUI for Homebrew",
-  },
-  {
-    slug: "titanbase",
-    name: "Titanbase",
-    description: "Visual Schema Designer For Developers and Product Teams.",
-    status: "Online",
-    stack: ["Schema Design", "Developer Tools", "Product Teams"],
-    site: "https://www.titanbase.run",
-    github: "https://github.com/titanbaserun/titanbase",
-    details: "Visual Schema Designer For Developers and Product Teams.",
   },
   {
     slug: "openmodels",
@@ -37,17 +34,6 @@ export const projects: Project[] = [
     status: "Online",
     stack: ["AI Infrastructure", "Registry", "Telemetry"],
     site: "https://www.openmodels.run",
-    github: "https://github.com/openmodelsrun/openmodels",
     details: "Open Registry & Telemetry for AI Infrastructure.",
-  },
-  {
-    slug: "floppyy",
-    name: "Floppyy",
-    description: "Floppyy is a browser desktop built on pure nostalgia.",
-    status: "Online",
-    stack: ["Retro Web", "Browser Desktop", "Nostalgia"],
-    site: "https://www.floppyy.com",
-    github: "https://github.com/floppyyos/floppyy",
-    details: "Floppyy is a browser desktop built on pure nostalgia.",
   },
 ];

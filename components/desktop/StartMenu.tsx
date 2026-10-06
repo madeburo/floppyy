@@ -71,7 +71,6 @@ export function StartMenu({ onOpen, onScreensaver, onShutdown, onNotify }: Props
       <div className={`min-w-0 flex-1 overflow-y-auto py-[3px] max-h-[calc(100dvh-44px)] ${openSub ? "max-sm:hidden" : ""}`}>
         {command("About", "credits", () => onOpen("about", "welcome"))}
         {command("Projects", "directory_net", () => onOpen("projects"))}
-        {command("Support Floppyy", "support", () => onOpen("support"))}
         <hr className="my-1 border-[#808080]" />
         {Object.keys(entries).map((name) => (
           <button key={name} ref={(element) => { anchors.current[name] = element; }} className="menu-command start-command flex items-center gap-2"

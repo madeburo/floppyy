@@ -37,7 +37,6 @@ import { RunWindow } from "@/components/windows/RunWindow";
 import { ScreensaverWindow } from "@/components/windows/ScreensaverWindow";
 import { SettingsWindow } from "@/components/windows/SettingsWindow";
 import { ShareWindow } from "@/components/windows/ShareWindow";
-import { SupportWindow } from "@/components/windows/SupportWindow";
 import { DefragWindow } from "@/components/windows/DefragWindow";
 import { HelpWindow } from "@/components/windows/HelpWindow";
 import { DocumentsWindow } from "@/components/windows/DocumentsWindow";
@@ -103,7 +102,6 @@ const ICON_STEP_X = ICON_WIDTH + ICON_COLUMN_GAP;
 const ICON_STEP_Y = ICON_HEIGHT + ICON_ROW_GAP;
 const DESKTOP_PADDING = 6;
 const TASKBAR_HEIGHT = 28;
-const SUPPORT_ICON_POSITION_MIGRATION = "floppyy-support-icon-position-v1";
 
 function initialIconPositions() {
   return iconGridPositions(desktopIcons.map((icon) => icon.id));
@@ -199,21 +197,10 @@ function readStoredIconPositions(): Record<string, IconPosition> {
     if (!parsed || typeof parsed !== "object") return positions;
     const hasEveryCurrentIcon = desktopIcons.every((icon) => parsed[icon.id]);
     if (!hasEveryCurrentIcon) return positions;
-    if (Object.values(parsed).some((position) => !position || !Number.isFinite(position.x) || !Number.isFinite(position.y) || position.x < 0 || position.y < 0 || position.x + 64 > window.innerWidth || position.y + 70 > window.innerHeight - 28)) return positions;
+    const current = Object.fromEntries(desktopIcons.map((icon) => [icon.id, parsed[icon.id]]));
+    if (Object.values(current).some((position) => !position || !Number.isFinite(position.x) || !Number.isFinite(position.y) || position.x < 0 || position.y < 0 || position.x + 64 > window.innerWidth || position.y + 70 > window.innerHeight - 28)) return positions;
 
-    if (!globalThis.localStorage.getItem(SUPPORT_ICON_POSITION_MIGRATION) && parsed.support) {
-      globalThis.localStorage.setItem(SUPPORT_ICON_POSITION_MIGRATION, "1");
-      return {
-        ...positions,
-        ...parsed,
-        support: {
-          ...parsed.support,
-          y: Math.max(DESKTOP_PADDING, parsed.support.y - ICON_STEP_Y),
-        },
-      };
-    }
-
-    return { ...positions, ...parsed };
+    return { ...positions, ...current };
   } catch {
     return positions;
   }
@@ -670,8 +657,6 @@ export default function Desktop() {
         return <SettingsWindow {...props} />;
       case "share":
         return <ShareWindow {...props} />;
-      case "support":
-        return <SupportWindow {...props} />;
       case "defrag":
         return <DefragWindow {...props} />;
       case "help":

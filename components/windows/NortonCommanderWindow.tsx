@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { WindowComponentProps } from "@/lib/windows";
+import { projects } from "@/lib/projects";
 
 type Drive = "C" | "D";
 type EntryKind = "file" | "dir";
@@ -112,7 +113,7 @@ const initialFs: FileSystem = {
         content:
           "Floppyy is a retro computer in your browser.\n\nIt brings back the feeling of old desktop systems, pixel windows, floppy disks, BIOS boot screens, Winamp vibes, classic games, and the early web.",
       },
-      { name: "CONTACT.CRD", kind: "file", size: 240, date: "06-01-26", content: "Floppyy\nwww.floppyy.com\ngithub.com/floppyyos\n" },
+      { name: "CONTACT.CRD", kind: "file", size: 240, date: "06-01-26", content: "Floppyy\nwww.floppyy.com\nhi@floppyy.com\n" },
       { name: "FLOPPYY", kind: "dir", size: 0, date: "06-01-26" },
       { name: "PROJECTS", kind: "dir", size: 0, date: "06-01-26" },
       { name: "SETUP.EXE", kind: "file", size: 131072, date: "06-01-26", content: "Setup is already complete. Please enjoy the desktop." },
@@ -123,12 +124,16 @@ const initialFs: FileSystem = {
       { name: "BRAND.TXT", kind: "file", size: 384, date: "06-01-26", content: "Name: Floppyy\nTagline: The web you grew up on.\nDomain: www.floppyy.com\n" },
       { name: "BOOT.LOG", kind: "file", size: 220, date: "06-01-26", content: "Energy Star OK\nBIOS OK\nNostalgia loaded\n" },
     ],
-    PROJECTS: [
-      { name: "BREWWERY.TXT", kind: "file", size: 128, date: "06-01-26", content: "A visual Homebrew manager for macOS.\nwww.brewwery.com\n" },
-      { name: "OPENMOD.TXT", kind: "file", size: 128, date: "06-01-26", content: "Open Registry & Telemetry for AI Infrastructure.\nwww.openmodels.run\n" },
-      { name: "TITAN.TXT", kind: "file", size: 128, date: "06-01-26", content: "Visual Schema Designer For Developers and Product Teams.\nwww.titanbase.run\n" },
-      { name: "NOHYPE.TXT", kind: "file", size: 128, date: "06-01-26", content: "AI and new tech explained honestly. No Hype.\nwww.withnohype.com\n" },
-    ],
+    PROJECTS: projects.map((project) => {
+      const content = `${project.description}\n${project.site}\n`;
+      return {
+        name: `${project.slug.slice(0, 8).toUpperCase()}.TXT`,
+        kind: "file",
+        size: content.length,
+        date: "10-06-26",
+        content,
+      };
+    }),
     SYSTEM: [
       { name: "KERNEL32.DLL", kind: "file", size: 471040, date: "06-26-98", content: "System file. Please do not shake." },
       { name: "USER.EXE", kind: "file", size: 462336, date: "06-26-98", content: "User interface routines are feeling classic." },

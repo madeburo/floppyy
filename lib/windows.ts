@@ -43,7 +43,6 @@ export type WindowId =
   | "run"
   | "settings"
   | "share"
-  | "support"
   | "project-details";
 
 export type DesktopWindow = {
@@ -142,7 +141,6 @@ export const windowDefinitions: Record<WindowId, WindowDefinition> = {
   run: { id: "run", title: "Run", icon: "run", width: 380, height: 168, dialog: true },
   settings: { id: "settings", title: "Settings", icon: "gears", width: 520, height: 380 },
   share: { id: "share", title: "Send to a Friend", icon: "garfield", width: 400, height: 555 },
-  support: { id: "support", title: "Support Floppyy", icon: "support", width: 580, height: 380, minWidth: 420, minHeight: 300, noMaximize: true },
   "project-details": {
     id: "project-details",
     title: "Project Details",
@@ -185,5 +183,4 @@ export const desktopIcons: DesktopIconDefinition[] = [
   { id: "all-star", label: "All Star", icon: "video", windowId: "mediaplayer", payload: "Smash Mouth - All Star" },
   { id: "guestbook", label: "Guest Book", icon: "guestbook", windowId: "guestbook" },
   { id: "share", label: "Share", icon: "garfield", windowId: "share" },
-  { id: "support", label: "Support Floppyy", icon: "support", windowId: "support" },
 ];

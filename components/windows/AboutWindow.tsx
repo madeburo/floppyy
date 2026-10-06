@@ -4,14 +4,13 @@ import { useState } from "react";
 import type { WindowComponentProps } from "@/lib/windows";
 import { SHORT_VERSION } from "@/lib/version";
 
-type AboutPanel = "welcome" | "nostalgia" | "credits" | "connect" | "support";
+type AboutPanel = "welcome" | "nostalgia" | "credits" | "connect";
 
 const panels: Array<{ id: AboutPanel; label: string }> = [
   { id: "welcome", label: "Welcome" },
   { id: "credits", label: "Credits" },
   { id: "nostalgia", label: "Discover Floppyy" },
   { id: "connect", label: "Connect" },
-  { id: "support", label: "Support Floppyy" },
 ];
 
 export function AboutWindow({ window, closeWindow, playSound }: WindowComponentProps) {
@@ -151,37 +150,7 @@ function PanelContent({
       <section className="relative max-w-[300px] space-y-[12px]">
         <h2 className="text-[20px] font-bold">Connect</h2>
         <p>Floppyy lives at <a className="text-[#0000ff] underline" href="https://www.floppyy.com" target="_blank" rel="noopener noreferrer">www.floppyy.com</a>.</p>
-        <p>The current GitHub home is <a className="text-[#0000ff] underline" href="https://github.com/floppyyos" target="_blank" rel="noopener noreferrer">github.com/floppyyos</a>.</p>
         <p>Say hello at <a className="text-[#0000ff] underline" href="mailto:hi@floppyy.com">hi@floppyy.com</a>.</p>
-      </section>
-    );
-  }
-
-  if (activePanel === "support") {
-    return (
-      <section className="relative max-w-[315px] space-y-[12px]">
-        <h2 className="text-[20px] font-bold">Support Floppyy</h2>
-        <p>Floppyy is a free nostalgic trip back to the old web. Every coffee helps keep it online and growing.</p>
-        <div className="flex gap-[8px]">
-          <a
-            className="win-button flex min-w-[98px] items-center justify-center gap-[6px] px-[10px]"
-            href="https://ko-fi.com/floppyyos"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <img src="/support/kofi.png" alt="" width={16} height={16} style={{ imageRendering: "pixelated" }} draggable={false} />
-            Ko-fi
-          </a>
-          <a
-            className="win-button flex min-w-[98px] items-center justify-center gap-[6px] px-[10px]"
-            href="https://paypal.me/UmidM"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <img src="/support/paypal.png" alt="" width={16} height={16} style={{ imageRendering: "pixelated" }} draggable={false} />
-            PayPal
-          </a>
-        </div>
       </section>
     );
   }

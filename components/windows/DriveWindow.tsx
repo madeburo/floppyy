@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import type { WindowComponentProps } from "@/lib/windows";
 import { ToolbarIcon } from "./ToolbarIcon";
 import { GAME_REGISTRY } from "@/lib/gameRegistry";
+import { projects } from "@/lib/projects";
 
 type DriveId = "A" | "C" | "D";
 type DriveItem = {
@@ -111,12 +112,13 @@ const driveFiles: Record<DriveId, Record<string, DriveItem[]>> = {
       { id: "aol", label: "AOL.url", icon: "url", description: "Internet Shortcut", kind: "file" },
       { id: "readme", label: "README.txt", icon: "notepad", description: "Text Document", kind: "file" },
     ],
-    Projects: [
-      { id: "brewwery", label: "Brewwery", icon: "folder", description: "A visual Homebrew manager for macOS.", kind: "file" },
-      { id: "openmodels", label: "OpenModels", icon: "folder", description: "Open Registry & Telemetry for AI Infrastructure.", kind: "file" },
-      { id: "titanbase", label: "Titanbase", icon: "folder", description: "Visual Schema Designer For Developers and Product Teams.", kind: "file" },
-      { id: "floppyy", label: "Floppyy", icon: "folder", description: "A retro computer in your browser.", kind: "file" },
-    ],
+    Projects: projects.map((project) => ({
+      id: project.slug,
+      label: project.name,
+      icon: "folder",
+      description: project.description,
+      kind: "file",
+    })),
     Games: GAME_REGISTRY.map((game) => ({ ...game, kind: "file" })),
   },
   D: {

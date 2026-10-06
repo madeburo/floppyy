@@ -5,7 +5,6 @@ import { MenuBar } from "./MenuBar";
 
 const contacts = [
   ["Email", "hi@floppyy.com"],
-  ["GitHub", "github.com/floppyyos"],
   ["Website", "www.floppyy.com"],
   ["Tagline", "The web you grew up on."],
 ];
