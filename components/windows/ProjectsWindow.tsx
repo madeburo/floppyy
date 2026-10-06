@@ -41,10 +41,13 @@ export function ProjectsWindow({ openWindow, notify }: WindowComponentProps) {
           </div>
           <div className="mt-auto flex items-center gap-4 border-t border-[#dfdfdf] px-3 py-4">
             <img src="/misc/author-pixel.png" alt="Pixel portrait of Umid" width={48} height={48} className="h-[48px] w-[48px] shrink-0 rounded-sm" style={{ imageRendering: "pixelated" }} />
-            <div className="flex-1 text-[11px] text-[#404040]">
+            <div className="min-w-0 flex-1 text-[11px] text-[#404040]">
               <p className="mb-1 font-bold text-black">Hi, I&apos;m Umid</p>
-              <p>Software engineer and open source enthusiast.</p>
+              <p>CTO, AI Systems Engineer building AI products and independent software projects.</p>
             </div>
+            <button className="win-button shrink-0" onClick={() => visit("https://mirzabek.com")}>
+              Personal
+            </button>
           </div>
         </div>
       </div>
