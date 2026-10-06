@@ -33,7 +33,7 @@ export function GameMenuBar({ items }: { items: MenuItem[] }) {
   return (
     <div
       ref={barRef}
-      className="relative flex h-[20px] shrink-0 items-center gap-[18px] bg-[#c0c0c0] px-[4px] text-[11px] leading-none"
+      className="game-menu-bar relative flex h-[20px] shrink-0 items-center gap-[18px] bg-[#c0c0c0] px-[4px] text-[11px] leading-none"
     >
       {items.map((item) => {
         const isOpen = open === item.label;
@@ -47,6 +47,7 @@ export function GameMenuBar({ items }: { items: MenuItem[] }) {
         return (
           <div key={item.label} className="relative">
             <button
+              aria-label={item.label}
               className={`flex h-[18px] items-center px-[6px] leading-none ${isOpen ? "bg-[#000080] text-white" : "active:bg-[#000080] active:text-white"}`}
               onClick={handleClick}
             >

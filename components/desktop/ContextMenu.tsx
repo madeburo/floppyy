@@ -132,6 +132,9 @@ export function ContextMenu({
           <button className="menu-command" onClick={act(onLineUpIcons)}>
             Line Up Icons
           </button>
+          <button className="menu-command" onClick={act(onArrangeIcons)}>
+            Restore Desktop Layout
+          </button>
 
           <Separator />
 

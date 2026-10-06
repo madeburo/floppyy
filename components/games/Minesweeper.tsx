@@ -5,6 +5,7 @@ import { useEffect, useMemo, useState } from "react";
 import { GameMenuBar } from "./GameChrome";
 import { FloppyyIcon } from "@/components/desktop/FloppyyIcon";
 import { Win98ErrorDialog } from "@/components/windows/Win98ErrorDialog";
+import { useWindowActivity } from "@/components/windows/WindowActivity";
 
 const cellSize = 16;
 
@@ -154,6 +155,7 @@ export function Minesweeper({ playSound, onExit }: { playSound: (name: string) =
   const [lost, setLost] = useState(false);
   const [deathCell, setDeathCell] = useState<number | null>(null);
   const [started, setStarted] = useState(false);
+  const { active } = useWindowActivity();
   const [startedAt, setStartedAt] = useState(() => Date.now());
   const [now, setNow] = useState(() => Date.now());
   const [face, setFace] = useState<Face>("happy");
@@ -167,16 +169,16 @@ export function Minesweeper({ playSound, onExit }: { playSound: (name: string) =
   const elapsed = Math.min(999, Math.floor((now - startedAt) / 1000));
 
   useEffect(() => {
-    if (!started || lost || won) return;
-    const timer = window.setInterval(() => setNow(nowMs()), 1000);
+    if (!started || lost || won || !active) return;
+    const timer = window.setInterval(() => setNow((value) => value + 1000), 1000);
     return () => window.clearInterval(timer);
-  }, [started, lost, won]);
+  }, [started, lost, won, active]);
 
   useEffect(() => {
     if (!won) return;
     playSound("notification");
     if (level === "custom") return; // custom games don't record best times
-    const finalTime = Math.max(1, Math.floor((nowMs() - startedAt) / 1000));
+    const finalTime = Math.max(1, elapsed);
     const timer = window.setTimeout(() => {
       setBestTimes((prev) => {
         const current = prev[level];
@@ -191,7 +193,7 @@ export function Minesweeper({ playSound, onExit }: { playSound: (name: string) =
       });
     }, 0);
     return () => window.clearTimeout(timer);
-  }, [won, playSound, level, startedAt]);
+  }, [won, playSound, level, elapsed]);
 
   const reset = () => {
     const nextNow = nowMs();

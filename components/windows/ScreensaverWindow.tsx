@@ -148,17 +148,19 @@ export function ScreensaverWindow({
   setDefaultScreensaver,
   closeWindow,
   window: win,
-  notify,
   playSound,
   wallpaper,
   setWallpaper,
+  screensaverMode = "flying-windows",
+  screensaverWait = 1,
+  setScreensaverWait,
+  resetDesktopLayout,
 }: WindowComponentProps) {
   const [activeTab, setActiveTab] = useState(() =>
     win.payload === "settings" ? "Settings" : win.payload === "screensaver" ? "Screen Saver" : "Background",
   );
-  const [selected, setSelected] = useState<Mode>("flying-windows");
-  const [waitMinutes, setWaitMinutes] = useState(1);
-  const [passwordProtected, setPasswordProtected] = useState(false);
+  const [selected, setSelected] = useState<Mode>(screensaverMode);
+  const [waitMinutes, setWaitMinutes] = useState(screensaverWait);
   const [colorDepth, setColorDepth] = useState("High Color (16 bit)");
   const [resIndex, setResIndex] = useState(1);
   const [selectedWallpaper, setSelectedWallpaper] = useState<WallpaperId>(() =>
@@ -167,17 +169,18 @@ export function ScreensaverWindow({
 
   const apply = () => {
     setDefaultScreensaver?.(selected);
+    setScreensaverWait?.(Math.max(1, Math.min(60, waitMinutes)));
+    setWallpaper?.(selectedWallpaper);
     playSound("click");
   };
 
   const pickWallpaper = (id: WallpaperId) => {
     setSelectedWallpaper(id);
-    setWallpaper?.(id);
     playSound("click");
   };
 
   return (
-    <div className="flex h-full flex-col bg-[#c0c0c0] p-[14px] text-[11px]">
+    <div className="flex h-full min-h-0 flex-col bg-[#c0c0c0] p-[6px] text-[11px] sm:p-[14px]">
       <div className="relative z-[2] flex gap-[5px] px-[2px]">
         {TABS.map((tab) => {
           const active = tab === activeTab;
@@ -197,8 +200,8 @@ export function ScreensaverWindow({
       </div>
 
       <div
-        className="-mt-px flex flex-1 flex-col bg-[#c0c0c0]"
-        style={{ boxShadow: "inset -1px -1px #0a0a0a, inset 1px 1px #ffffff, inset -2px -2px #808080, inset 2px 2px #dfdfdf", padding: "16px 24px" }}
+        className="-mt-px flex min-h-0 flex-1 flex-col overflow-auto bg-[#c0c0c0] px-[8px] py-[12px] sm:px-[24px] sm:py-[16px]"
+        style={{ boxShadow: "inset -1px -1px #0a0a0a, inset 1px 1px #ffffff, inset -2px -2px #808080, inset 2px 2px #dfdfdf" }}
       >
         <div className="mb-[12px] flex justify-center">
           <MonitorPreview>
@@ -242,17 +245,17 @@ export function ScreensaverWindow({
           <>
         <fieldset className="mb-[10px] border border-[#808080] px-[10px] pb-[10px] pt-[2px]">
           <legend className="px-[4px]">Screen Saver</legend>
-          <div className="flex items-center gap-[6px]">
+          <div className="grid grid-cols-2 items-center gap-[6px] sm:flex">
             <Win98Select
               value={selected}
               onChange={(v) => setSelected(v as Mode)}
               options={OPTIONS.map((o) => ({ value: o.value, label: o.label }))}
               ariaLabel="Screen saver"
-              className="flex-1"
+              className="col-span-2 min-w-0 flex-1"
             />
             <button
               className="win-button min-w-[72px]"
-              onClick={() => notify("Screen saver settings are not available.")}
+              disabled
             >
               Settings...
             </button>
@@ -260,26 +263,28 @@ export function ScreensaverWindow({
               Preview
             </button>
           </div>
-          <div className="mt-[10px] flex items-center gap-[8px]">
+          <div className="mt-[10px] flex flex-wrap items-center gap-[8px]">
             <label className="flex items-center gap-[5px]">
               <input
                 type="checkbox"
-                checked={passwordProtected}
-                onChange={(event) => setPasswordProtected(event.target.checked)}
+                checked={false}
+                disabled
+                readOnly
               />
               Password protected
             </label>
-            <button className="win-button min-w-[68px]" aria-disabled={!passwordProtected} disabled={!passwordProtected}>
+            <button className="win-button min-w-[68px]" disabled>
               Change...
             </button>
             <span className="ml-auto flex items-center gap-[5px]">
               Wait:
               <input
                 type="number"
+                aria-label="Screen saver wait in minutes"
                 min={1}
                 max={60}
                 value={waitMinutes}
-                onChange={(event) => setWaitMinutes(Math.max(1, Number(event.target.value) || 1))}
+                onChange={(event) => setWaitMinutes(Math.min(60, Math.max(1, Number(event.target.value) || 1)))}
                 className="field-border h-[20px] w-[44px] bg-white px-[4px] text-right text-[11px] text-black"
               />
               minutes
@@ -321,10 +326,11 @@ export function ScreensaverWindow({
               <div>Display:</div>
               <div className="font-bold">Default Monitor on S3 Trio32/64 PCI (732/764)</div>
             </div>
-            <div className="flex gap-[12px]">
+            <div className="flex flex-col gap-[12px] sm:flex-row">
               <fieldset className="flex-1 border border-[#808080] px-[10px] pb-[10px] pt-[2px]">
                 <legend className="px-[4px]">Colors</legend>
                 <Win98Select
+                  disabled
                   value={colorDepth}
                   onChange={setColorDepth}
                   ariaLabel="Colors"
@@ -344,7 +350,7 @@ export function ScreensaverWindow({
                   }}
                 />
               </fieldset>
-              <fieldset className="flex-1 border border-[#808080] px-[10px] pb-[10px] pt-[2px]">
+              <fieldset disabled className="pointer-events-none flex-1 border border-[#808080] px-[10px] pb-[10px] pt-[2px] opacity-60" aria-disabled="true">
                 <legend className="px-[4px]">Screen area</legend>
                 <div className="flex items-center justify-between text-[11px]">
                   <span>Less</span>
@@ -361,7 +367,7 @@ export function ScreensaverWindow({
             <div className="mt-[10px] flex justify-end">
               <button
                 className="win-button min-w-[92px]"
-                onClick={() => notify("Advanced display properties are not available.")}
+                disabled
               >
                 Advanced...
               </button>
@@ -369,7 +375,10 @@ export function ScreensaverWindow({
           </>
         )}
 
-        <div className="mt-auto flex justify-end gap-[6px] pt-[10px]">
+        {activeTab === "Settings" && <button className="win-button mt-3 self-start" onClick={resetDesktopLayout}>Restore Desktop Layout</button>}
+      </div>
+
+        <div className="flex shrink-0 justify-end gap-[6px] pt-[10px]">
           <button
             className="win-button min-w-[72px]"
             onClick={() => {
@@ -386,7 +395,6 @@ export function ScreensaverWindow({
             Apply
           </button>
         </div>
-      </div>
     </div>
   );
 }

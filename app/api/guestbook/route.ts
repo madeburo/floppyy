@@ -21,14 +21,16 @@ export async function GET(request: Request) {
   const url = new URL(request.url);
   const limitParam = Number(url.searchParams.get("limit"));
   const beforeParam = Number(url.searchParams.get("before"));
+  const checkedIds = [...new Set((url.searchParams.get("checkIds") ?? "").split(",").map(Number).filter((id) => Number.isSafeInteger(id) && id > 0))].slice(0, 100);
 
   try {
     const messages = await guestbookStore().list({
       limit: Number.isFinite(limitParam) && limitParam > 0 ? limitParam : undefined,
       before: Number.isFinite(beforeParam) && beforeParam > 0 ? beforeParam : undefined,
     });
+    const existing = new Set(await guestbookStore().existingIds(checkedIds));
     return Response.json(
-      { messages },
+      { messages, deletedIds: checkedIds.filter((id) => !existing.has(id)) },
       { headers: { "Cache-Control": "no-store" } },
     );
   } catch (error) {

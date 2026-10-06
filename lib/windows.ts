@@ -76,6 +76,8 @@ export type WindowDefinition = {
 
 export type WindowComponentProps = {
   window: DesktopWindow;
+  active?: boolean;
+  registerCloseGuard?: (instanceId: string, guard: (proceed: () => void) => void) => () => void;
   openWindow: (id: WindowId, payload?: string) => void;
   closeWindow: (instanceId: string) => void;
   minimizeWindow?: (instanceId: string) => void;
@@ -86,6 +88,10 @@ export type WindowComponentProps = {
   fadeOutSound?: (sound: string, duration?: number) => void;
   startScreensaver: (mode?: "pipes" | "stars" | "maze" | "mystify" | "flying-windows") => void;
   setDefaultScreensaver?: (mode: "pipes" | "stars" | "maze" | "mystify" | "flying-windows") => void;
+  screensaverMode?: "pipes" | "stars" | "maze" | "mystify" | "flying-windows";
+  screensaverWait?: number;
+  setScreensaverWait?: (minutes: number) => void;
+  resetDesktopLayout?: () => void;
   crashSystem?: (options?: { variant?: "cascade" | "fatal"; message?: string }) => void;
   wallpaper?: string;
   setWallpaper?: (id: string) => void;

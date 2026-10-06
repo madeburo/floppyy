@@ -4,11 +4,25 @@ import { useCallback, useEffect, useRef, useState } from "react";
 
 export type ScreensaverMode = "pipes" | "stars" | "maze" | "mystify" | "flying-windows";
 
-export function useScreensaver(timeoutMs = 60000, suspended = false) {
+function readPreferences() {
+  try {
+    const value = JSON.parse(localStorage.getItem("floppyy-screensaver") ?? "{}");
+    const mode: ScreensaverMode = ["pipes", "stars", "maze", "mystify", "flying-windows"].includes(value.mode) ? value.mode : "flying-windows";
+    return { mode, wait: Number.isFinite(value.wait) ? Math.min(60, Math.max(1, value.wait)) : 1 };
+  } catch { return { mode: "flying-windows" as ScreensaverMode, wait: 1 }; }
+}
+
+export function useScreensaver(suspended = false) {
   const [active, setActive] = useState(false);
-  const [mode, setMode] = useState<ScreensaverMode>("flying-windows");
+  const [defaultMode, setDefaultMode] = useState<ScreensaverMode>(() => readPreferences().mode);
+  const [mode, setMode] = useState<ScreensaverMode>(defaultMode);
+  const [waitMinutes, setWaitMinutes] = useState(() => readPreferences().wait);
+  const timeoutMs = waitMinutes * 60000;
   const timer = useRef<number | null>(null);
   const activatedAt = useRef(0);
+  useEffect(() => {
+    try { localStorage.setItem("floppyy-screensaver", JSON.stringify({ mode: defaultMode, wait: waitMinutes })); } catch { /* ignore */ }
+  }, [defaultMode, waitMinutes]);
 
   const clear = useCallback(() => {
     if (timer.current) window.clearTimeout(timer.current);
@@ -18,9 +32,10 @@ export function useScreensaver(timeoutMs = 60000, suspended = false) {
     clear();
     timer.current = window.setTimeout(() => {
       activatedAt.current = performance.now();
+      setMode(defaultMode);
       setActive(true);
     }, timeoutMs);
-  }, [clear, timeoutMs]);
+  }, [clear, defaultMode, timeoutMs]);
 
   const start = useCallback((nextMode: ScreensaverMode = "flying-windows") => {
     activatedAt.current = performance.now();
@@ -58,5 +73,5 @@ export function useScreensaver(timeoutMs = 60000, suspended = false) {
     };
   }, [active, clear, schedule, suspended]);
 
-  return { active, mode, start, stop, setMode };
+  return { active, mode, start, stop, defaultMode, setMode: setDefaultMode, waitMinutes, setWaitMinutes };
 }

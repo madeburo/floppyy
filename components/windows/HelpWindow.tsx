@@ -2,6 +2,7 @@
 
 import { useState, type ReactNode } from "react";
 import type { WindowComponentProps } from "@/lib/windows";
+import { SHORT_VERSION } from "@/lib/version";
 
 type Topic = {
   id: string;
@@ -195,7 +196,7 @@ export function HelpWindow({ openWindow }: WindowComponentProps) {
       body: (
         <div className="space-y-[10px]">
           <p><b>Floppyy</b> — the web you grew up on.</p>
-          <p>Version 3.7</p>
+          <p>Version {SHORT_VERSION}</p>
           <p>
             Built with a lot of nostalgia. For the full story and credits, open{" "}
             <button className="text-[#0000ff] underline" onClick={() => openWindow("about", "welcome")}>

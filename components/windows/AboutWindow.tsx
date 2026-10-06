@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import type { WindowComponentProps } from "@/lib/windows";
+import { SHORT_VERSION } from "@/lib/version";
 
 type AboutPanel = "welcome" | "nostalgia" | "credits" | "connect" | "support";
 
@@ -135,7 +136,7 @@ function PanelContent({
     return (
       <section className="relative max-w-[315px] space-y-[10px]">
         <h2 className="text-[20px] font-bold">Credits</h2>
-        <p>Floppyy Version 3.7</p>
+        <p>Floppyy Version {SHORT_VERSION}</p>
         <p className="border-t border-[#d0d0d0] pt-[8px] text-[11px] leading-[1.5] text-[#333333]">
           All rights to logos, names, music, games, and other materials belong to their respective
           owners. This project was created purely as a tribute to the 1990s. If you would like to add

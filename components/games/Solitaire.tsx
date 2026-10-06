@@ -3,10 +3,11 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { GameMenuBar, GameStatusBar } from "./GameChrome";
 import { FloppyyIcon } from "@/components/desktop/FloppyyIcon";
+import { solitaireLayout } from "@/lib/games/solitaireLayout";
+import { useWindowActivity } from "@/components/windows/WindowActivity";
 
 const CARD_W = 71;
 const CARD_H = 96;
-const COL_GAP = 8;
 const TOP_Y = 14;
 const TABLEAU_Y = TOP_Y + CARD_H + 16;
 const FACE_DOWN_OFFSET = 5;
@@ -95,6 +96,16 @@ function deal(): GameState {
 }
 
 export function Solitaire({ playSound, onExit }: { playSound: (name: string) => void; onExit?: () => void }) {
+  const { active } = useWindowActivity();
+  const tableRef = useRef<HTMLDivElement>(null);
+  const [tableSize, setTableSize] = useState({ width: 577, height: 420 });
+  useEffect(() => {
+    const element = tableRef.current;
+    if (!element) return;
+    const observer = new ResizeObserver(() => setTableSize({ width: element.clientWidth, height: element.clientHeight }));
+    observer.observe(element);
+    return () => observer.disconnect();
+  }, []);
   const [game, setGame] = useState<GameState>(() => deal());
   const [score, setScore] = useState(0);
   const [seconds, setSeconds] = useState(0);
@@ -121,10 +132,10 @@ export function Solitaire({ playSound, onExit }: { playSound: (name: string) => 
 
   // Timer
   useEffect(() => {
-    if (!started || won) return;
+    if (!started || won || !active) return;
     const timer = window.setInterval(() => setSeconds((s) => s + 1), 1000);
     return () => window.clearInterval(timer);
-  }, [started, won]);
+  }, [active, started, won]);
 
   const begin = useCallback(() => {
     setStarted(true);
@@ -337,11 +348,14 @@ export function Solitaire({ playSound, onExit }: { playSound: (name: string) => 
 
   const allowDrop = (e: React.DragEvent) => e.preventDefault();
 
-  const foundationX = (i: number) => 16 + (3 + i) * (CARD_W + COL_GAP);
-  const tableauX = (i: number) => 16 + i * (CARD_W + COL_GAP);
+  const { padding, gap, baseWidth, scale } = solitaireLayout(tableSize.width);
+  const foundationX = (i: number) => padding + (3 + i) * (CARD_W + gap);
+  const tableauX = (i: number) => padding + i * (CARD_W + gap);
+  const contentHeight = TABLEAU_Y + CARD_H + 16 + Math.max(...game.tableau.map((pile) => pile.slice(0, -1).reduce((total, card) => total + (card.faceUp ? FACE_UP_OFFSET : FACE_DOWN_OFFSET), 0)));
+  const tableHeight = Math.max(tableSize.height, contentHeight * scale);
 
   return (
-    <div className="relative flex h-full min-h-[420px] flex-col bg-[#c0c0c0]">
+    <div className="relative flex h-full min-h-0 flex-col bg-[#c0c0c0]">
       <GameMenuBar
         items={[
           {
@@ -362,16 +376,20 @@ export function Solitaire({ playSound, onExit }: { playSound: (name: string) => 
         ]}
       />
       <div
-        className="relative min-h-0 flex-1 overflow-hidden"
+        ref={tableRef}
+        className="relative min-h-0 flex-1 overflow-auto"
+        data-testid="solitaire-table"
         style={{
           background: "#008000",
           boxShadow: "inset 2px 2px #006000, inset -1px -1px #00a000",
         }}
       >
+        <div style={{ position: "relative", width: baseWidth * scale, height: tableHeight }}>
+        <div style={{ position: "absolute", width: baseWidth, height: tableHeight / scale, transform: `scale(${scale})`, transformOrigin: "top left" }}>
         {/* Stock */}
         <div
           className="absolute"
-          style={{ left: 16, top: TOP_Y, width: CARD_W, height: CARD_H }}
+          style={{ left: padding, top: TOP_Y, width: CARD_W, height: CARD_H }}
           onClick={drawStock}
         >
           {game.stock.length > 0 ? (
@@ -382,7 +400,7 @@ export function Solitaire({ playSound, onExit }: { playSound: (name: string) => 
         </div>
 
         {/* Waste */}
-        <div className="absolute" style={{ left: 16 + CARD_W + COL_GAP, top: TOP_Y, width: CARD_W, height: CARD_H }}>
+        <div className="absolute" style={{ left: padding + CARD_W + gap, top: TOP_Y, width: CARD_W, height: CARD_H }}>
           {game.waste.length === 0 ? (
             <EmptySlot />
           ) : (
@@ -426,7 +444,7 @@ export function Solitaire({ playSound, onExit }: { playSound: (name: string) => 
           <div
             key={col}
             className="absolute"
-            style={{ left: tableauX(col), top: TABLEAU_Y, width: CARD_W, height: CARD_H + pile.length * FACE_UP_OFFSET }}
+            style={{ left: tableauX(col), top: TABLEAU_Y, width: CARD_W, height: CARD_H + pile.slice(0, -1).reduce((height, card) => height + (card.faceUp ? FACE_UP_OFFSET : FACE_DOWN_OFFSET), 0) }}
             onDragOver={allowDrop}
             onDrop={() => tryDrop({ kind: "tableau", pile: col })}
             onClick={() => handlePileClick({ kind: "tableau", pile: col })}
@@ -464,6 +482,8 @@ export function Solitaire({ playSound, onExit }: { playSound: (name: string) => 
             </div>
           </div>
         )}
+        </div>
+        </div>
       </div>
       <GameStatusBar>
         Score: {score}

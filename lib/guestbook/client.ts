@@ -81,16 +81,26 @@ export async function fetchGuestbookHistory(options?: { force?: boolean }): Prom
 export function mergeGuestbookMessages(
   current: GuestbookMessage[],
   incoming: GuestbookMessage[],
+  deletedIds: number[] = [],
 ): GuestbookMessage[] {
-  if (incoming.length === 0) return current;
-  if (current.length === 0) return incoming;
-
-  const windowStart = incoming[0].id;
-  const windowEnd = incoming[incoming.length - 1].id;
-  const outside = current.filter((m) => m.id < windowStart || m.id > windowEnd);
+  const deleted = new Set(deletedIds);
   const byId = new Map<number, GuestbookMessage>();
-  for (const message of [...outside, ...incoming]) byId.set(message.id, message);
+  // Only explicit deletions remove entries: a paged or stale response is not a full snapshot.
+  for (const message of [...current, ...incoming]) {
+    if (!deleted.has(message.id)) byId.set(message.id, message);
+  }
   return [...byId.values()].sort((a, b) => a.id - b.id);
+}
+
+export async function fetchGuestbookPage(before?: number) {
+  return requestPage({ before, limit: MAX_PAGE_SIZE });
+}
+
+export async function fetchGuestbookSnapshot(checkIds: number[]) {
+  const query = new URLSearchParams({ checkIds: checkIds.slice(0, 100).join(",") });
+  const response = await fetch(`/api/guestbook?${query}`, { cache: "no-store" });
+  if (!response.ok) throw new Error("Guestbook request failed");
+  return await response.json() as { messages: GuestbookMessage[]; deletedIds: number[] };
 }
 
 export function rememberGuestbookMessage(message: GuestbookMessage): void {

@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useLayoutEffect, useRef, useState } from "react";
 import type { WindowId } from "@/lib/windows";
+import { GAME_REGISTRY } from "@/lib/gameRegistry";
 import { FloppyyIcon } from "./FloppyyIcon";
 
 type Props = {
@@ -10,238 +11,92 @@ type Props = {
   onShutdown: () => void;
   onNotify: (message: string, options?: { icon?: string; titleIcon?: string; persistent?: boolean }) => void;
 };
+type Entry = { label: string; icon: string; action: () => void };
+const menuShadow = "inset -1px -1px #0a0a0a, inset 1px 1px #fff, inset -2px -2px #808080, inset 2px 2px #dfdfdf";
 
 export function StartMenu({ onOpen, onScreensaver, onShutdown, onNotify }: Props) {
   const [openSub, setOpenSub] = useState<string | null>(null);
-  const toggleSub = (name: string) => setOpenSub((current) => (current === name ? null : name));
+  const [position, setPosition] = useState({ left: 220, top: 8 });
+  const anchors = useRef<Record<string, HTMLButtonElement | null>>({});
+  const panel = useRef<HTMLDivElement>(null);
+  const entries: Record<string, Entry[]> = {
+    Programs: [
+      ["internet", "Dial-Up Networking", "dialup"], ["music", "Winamp", "winamp"],
+      ["paint", "Paint", "paint"], ["netscape", "Netscape Navigator", "netscape"],
+      ["msdos", "MS-DOS Prompt", "prompt"], ["outlook", "Outlook Express", "msoutlook"],
+      ["guestbook", "Guest Book", "guestbook"],
+    ].map(([id, label, icon]) => ({ label, icon, action: () => onOpen(id as WindowId) })),
+    Games: GAME_REGISTRY.map((game) => ({ label: game.label.replace(/\.exe$/i, ""), icon: game.icon, action: () => onOpen(game.id) })),
+    Favorites: [
+      ["Lycos", "https://web.archive.org/web/19961225002710/http://www.lycos.com/"],
+      ["AltaVista", "https://web.archive.org/web/19961023234631/http://altavista.digital.com/"],
+      ["AOL", "https://web.archive.org/web/19961219002550/http://www.aol.com/"],
+      ["Yahoo", "https://web.archive.org/web/19961017235908/http://www.yahoo.com/"],
+      ["Amazon", "https://web.archive.org/web/19961112181513/http://www.amazon.com/"],
+      ["eBay", "https://web.archive.org/web/19961112181513/http://www.ebay.com/"],
+    ].map(([label, url]) => ({ label, icon: "html", action: () => onOpen("ie-browser", url) })),
+    Settings: [
+      { label: "Control Panel", icon: "control-panel", action: () => onOpen("control-panel") },
+      { label: "Display Settings", icon: "gears", action: () => onOpen("screensaver", "settings") },
+      { label: "Dial-Up Networking", icon: "dialup", action: () => onOpen("internet") },
+      { label: "Screensaver", icon: "monitor_windows", action: onScreensaver },
+      { label: "Windows Update...", icon: "windows_update", action: () => onNotify("Windows Update: No updates required. This is already the most nostalgic OS ever made.", { icon: "/favicon.png", titleIcon: "/icons/windows_update.png", persistent: true }) },
+    ],
+  };
+  useLayoutEffect(() => {
+    if (!openSub) return;
+    const place = () => {
+      const anchor = anchors.current[openSub]?.getBoundingClientRect();
+      if (!anchor || !panel.current) return;
+      setPosition({
+        left: Math.max(8, Math.min(anchor.right, window.innerWidth - 218)),
+        top: Math.max(8, Math.min(anchor.top, window.innerHeight - 36 - panel.current.offsetHeight)),
+      });
+    };
+    place();
+    window.addEventListener("resize", place);
+    return () => window.removeEventListener("resize", place);
+  }, [openSub]);
 
-  const programs: Array<[WindowId, string, string]> = [
-    ["internet", "Dial-Up Networking", "dialup"],
-    ["music", "Winamp", "winamp"],
-    ["paint", "Paint", "paint"],
-    ["netscape", "Netscape Navigator", "netscape"],
-    ["msdos", "MS-DOS Prompt", "prompt"],
-    ["outlook", "Outlook Express", "msoutlook"],
-    ["guestbook", "Guest Book", "guestbook"],
-  ];
-
-  const games: Array<[WindowId, string, string, string?]> = [
-    ["minesweeper", "Minesweeper", "mine"],
-    ["solitaire", "Solitaire", "cards"],
-    ["doom", "Doom", "doom"],
-    ["duke3d", "Duke Nukem 3D", "duke3d"],
-    ["wolf3d", "Wolfenstein 3D", "wolfenstein"],
-    ["dune2", "Dune II", "dune2"],
-    ["warcraft", "WarCraft", "warcraft"],
-    ["snake", "Snake", "snake"],
-    ["tetris", "Tetris", "tetris"],
-    ["breakout", "Breakout", "breakout"],
-    ["pixel-puzzle", "Pixel Puzzle", "pixelpuzzle"],
-    ["typing-game", "Typing Tutor", "typingtutor"],
-    ["checkers", "Checkers", "checkers"],
-  ];
-
-  const favorites: Array<[string, string]> = [
-    ["Lycos", "https://web.archive.org/web/19961225002710/http://www.lycos.com/"],
-    ["AltaVista", "https://web.archive.org/web/19961023234631/http://altavista.digital.com/"],
-    ["AOL", "https://web.archive.org/web/19961219002550/http://www.aol.com/"],
-    ["Yahoo", "https://web.archive.org/web/19961017235908/http://www.yahoo.com/"],
-    ["Amazon", "https://web.archive.org/web/19961112181513/http://www.amazon.com/"],
-    ["eBay", "https://web.archive.org/web/19961225025243/http://www.ebay.com/"],
-  ];
-
+  const command = (label: string, icon: string, action: () => void) => (
+    <button key={label} className="menu-command start-command flex items-center gap-2" onClick={action} onMouseEnter={() => setOpenSub(null)}>
+      <FloppyyIcon type={icon} size={16} /><span>{label}</span>
+    </button>
+  );
   return (
-    <div
-      className="fixed bottom-[28px] left-0 z-[4500] flex w-[220px] bg-[#c0c0c0]"
-      style={{
-        boxShadow: "inset -1px -1px #0a0a0a, inset 1px 1px #ffffff, inset -2px -2px #808080, inset 2px 2px #dfdfdf"
-      }}
-      onClick={(event) => event.stopPropagation()}
-    >
-      <div
-        className="relative flex w-[26px] items-end justify-center bg-[#000080]"
-        style={{ paddingBottom: "24px" }}
-        title="Double click"
-        onDoubleClick={() => onOpen("about", "welcome")}
-      >
-        <div className="-rotate-90 whitespace-nowrap text-[12px] font-bold tracking-wider">
-          <span className="text-[#b0b0b0]">floppy</span><span className="text-white">y</span>
-        </div>
+    <div role="navigation" aria-label="Start menu" className="fixed bottom-[28px] left-0 z-[4500] flex w-[220px] max-w-[calc(100vw-8px)] bg-[#c0c0c0]" style={{ boxShadow: menuShadow }} onClick={(event) => event.stopPropagation()}>
+      <div title="Double click" onDoubleClick={() => onOpen("about", "welcome")} className="flex w-[26px] shrink-0 items-end justify-center bg-[#000080] pb-6">
+        <span className="-rotate-90 whitespace-nowrap text-[12px] font-bold text-white">floppyy</span>
       </div>
-
-      <div className="flex-1 py-[3px]">
-        <button className="menu-command flex items-center gap-[8px] py-[3px]" onClick={() => onOpen("about", "welcome")}>
-          <FloppyyIcon type="credits" size={16} />
-          <span>About</span>
-        </button>
-        <button className="menu-command flex items-center gap-[8px] py-[3px]" onClick={() => onOpen("projects")}>
-          <FloppyyIcon type="directory_net" size={16} />
-          <span>Projects</span>
-        </button>
-        <button className="menu-command flex items-center gap-[8px] py-[3px]" onClick={() => onOpen("support")}>
-          <FloppyyIcon type="support" size={16} />
-          <span>Support Floppyy</span>
-        </button>
-        <div className="mx-[3px] my-[2px] h-[1px] bg-[#808080] shadow-[0_1px_0_#fff]" />
-
-        <div className="group/programs relative">
-          <button
-            className="menu-command flex items-center gap-[8px] py-[3px]"
-            onClick={() => toggleSub("programs")}
-          >
-            <FloppyyIcon type="directory_open" size={16} />
-            <span>Programs</span>
-            <span className="ml-auto w-[10px] text-center text-[7px] leading-none">{"\u25B6\uFE0E"}</span>
+      <div className={`min-w-0 flex-1 overflow-y-auto py-[3px] max-h-[calc(100dvh-44px)] ${openSub ? "max-sm:hidden" : ""}`}>
+        {command("About", "credits", () => onOpen("about", "welcome"))}
+        {command("Projects", "directory_net", () => onOpen("projects"))}
+        {command("Support Floppyy", "support", () => onOpen("support"))}
+        <hr className="my-1 border-[#808080]" />
+        {Object.keys(entries).map((name) => (
+          <button key={name} ref={(element) => { anchors.current[name] = element; }} className="menu-command start-command flex items-center gap-2"
+            aria-expanded={openSub === name} aria-controls={`start-${name}`}
+            onClick={() => setOpenSub(window.innerWidth >= 640 ? name : openSub === name ? null : name)}
+            onPointerEnter={(event) => { if (event.pointerType === "mouse" && window.innerWidth >= 640) setOpenSub(name); }}>
+            <FloppyyIcon type={name === "Games" ? "directory_check" : name === "Programs" ? "directory_open" : name === "Favorites" ? "fav" : "gears"} size={16} />
+            <span>{name}</span><span className="ml-auto" aria-hidden="true">›</span>
           </button>
-          <div
-            className={`absolute left-full top-0 w-[210px] max-[640px]:w-[160px] bg-[#c0c0c0] py-[3px] group-hover/programs:block ${openSub === "programs" ? "block" : "hidden"}`}
-            style={{
-              boxShadow: "inset -1px -1px #0a0a0a, inset 1px 1px #ffffff, inset -2px -2px #808080, inset 2px 2px #dfdfdf",
-            }}
-          >
-            {programs.map(([id, label, icon]) => (
-              <button
-                key={`${id}-${label}`}
-                className="menu-command flex items-center gap-[8px] py-[3px]"
-                onClick={() => onOpen(id)}
-              >
-                <FloppyyIcon type={icon} size={16} />
-                <span>{label}</span>
-              </button>
-            ))}
-          </div>
-        </div>
-
-        <div className="group/games relative">
-          <button className="menu-command flex items-center gap-[8px] py-[3px]" onClick={() => toggleSub("games")}>
-            <FloppyyIcon type="directory_check" size={16} />
-            <span>Games</span>
-            <span className="ml-auto w-[10px] text-center text-[7px] leading-none">{"\u25B6\uFE0E"}</span>
-          </button>
-          <div
-            className={`absolute left-full top-0 max-h-[calc(100vh-52px)] w-[180px] max-[640px]:w-[160px] overflow-y-auto bg-[#c0c0c0] pb-[18px] pt-[3px] group-hover/games:block ${openSub === "games" ? "block" : "hidden"}`}
-            style={{
-              boxShadow: "inset -1px -1px #0a0a0a, inset 1px 1px #ffffff, inset -2px -2px #808080, inset 2px 2px #dfdfdf",
-            }}
-          >
-            {games.map(([id, label, icon, payload]) => (
-              <button
-                key={`${id}-${label}`}
-                className="menu-command flex items-center gap-[8px] py-[3px]"
-                onClick={() => onOpen(id, payload)}
-              >
-                <FloppyyIcon type={icon} size={16} />
-                <span>{label}</span>
-              </button>
-            ))}
-            <div className="sticky bottom-0 flex h-[16px] items-center justify-center bg-[#c0c0c0] text-[9px] leading-none shadow-[inset_0_1px_#808080]">
-              ▼
-            </div>
-          </div>
-        </div>
-
-        <div className="mx-[3px] my-[2px] h-[1px] bg-[#808080] shadow-[0_1px_0_#fff]" />
-
-        <div className="group/favorites relative">
-          <button
-            className="menu-command flex items-center gap-[8px] py-[3px]"
-            onClick={() => toggleSub("favorites")}
-          >
-            <FloppyyIcon type="fav" size={16} />
-            <span>Favorites</span>
-            <span className="ml-auto w-[10px] text-center text-[7px] leading-none">{"\u25B6\uFE0E"}</span>
-          </button>
-          <div
-            className={`absolute left-full top-0 w-[190px] max-[640px]:w-[160px] bg-[#c0c0c0] py-[3px] group-hover/favorites:block ${openSub === "favorites" ? "block" : "hidden"}`}
-            style={{
-              boxShadow: "inset -1px -1px #0a0a0a, inset 1px 1px #ffffff, inset -2px -2px #808080, inset 2px 2px #dfdfdf",
-            }}
-          >
-            {favorites.map(([label, url]) => (
-              <button
-                key={label}
-                className="menu-command flex items-center gap-[8px] py-[3px]"
-                onClick={() => onOpen("ie-browser", url)}
-              >
-                <FloppyyIcon type="html" size={16} />
-                <span>{label}</span>
-              </button>
-            ))}
-          </div>
-        </div>
-
-        <div className="mx-[3px] my-[2px] h-[1px] bg-[#808080] shadow-[0_1px_0_#fff]" />
-
-        <div className="group/settings relative">
-          <button className="menu-command flex items-center gap-[8px] py-[3px]" onClick={() => toggleSub("settings")}>
-            <FloppyyIcon type="gears" size={16} />
-            <span>Settings</span>
-            <span className="ml-auto w-[10px] text-center text-[7px] leading-none">{"\u25B6\uFE0E"}</span>
-          </button>
-          <div
-            className={`absolute left-full top-0 w-[190px] max-[640px]:w-[160px] bg-[#c0c0c0] py-[3px] group-hover/settings:block ${openSub === "settings" ? "block" : "hidden"}`}
-            style={{
-              boxShadow: "inset -1px -1px #0a0a0a, inset 1px 1px #ffffff, inset -2px -2px #808080, inset 2px 2px #dfdfdf",
-            }}
-          >
-            <button className="menu-command flex items-center gap-[8px] py-[3px]" onClick={() => onOpen("control-panel")}>
-              <FloppyyIcon type="control-panel" size={16} />
-              <span>Control Panel</span>
-            </button>
-            <button className="menu-command flex items-center gap-[8px] py-[3px]" onClick={() => onOpen("screensaver", "settings")}>
-              <FloppyyIcon type="gears" size={16} />
-              <span>Display Settings</span>
-            </button>
-            <button className="menu-command flex items-center gap-[8px] py-[3px]" onClick={() => onOpen("internet")}>
-              <FloppyyIcon type="dialup" size={16} />
-              <span>Dial-Up Networking</span>
-            </button>
-            <button className="menu-command flex items-center gap-[8px] py-[3px]" onClick={onScreensaver}>
-              <FloppyyIcon type="monitor_windows" size={16} />
-              <span>Screensaver</span>
-            </button>
-            <div className="mx-[3px] my-[2px] h-[1px] bg-[#808080] shadow-[0_1px_0_#fff]" />
-            <button
-              className="menu-command flex items-center gap-[8px] py-[3px]"
-              onClick={() =>
-                onNotify(
-                  "Windows Update: No updates required. This is already the most nostalgic OS ever made.",
-                  { icon: "/favicon.png", titleIcon: "/icons/windows_update.png", persistent: true },
-                )
-              }
-            >
-              <img src="/icons/windows_update.png" alt="" width={16} height={16} style={{ imageRendering: "pixelated" }} draggable={false} />
-              <span>Windows Update...</span>
-            </button>
-          </div>
-        </div>
-        <button className="menu-command flex items-center gap-[8px] py-[3px]" onClick={() => onOpen("computer")}>
-          <FloppyyIcon type="computer" size={16} />
-          <span>My Computer</span>
-        </button>
-        <button className="menu-command flex items-center gap-[8px] py-[3px]" onClick={() => onOpen("norton")}>
-          <FloppyyIcon type="console" size={16} />
-          <span>Norton Commander</span>
-        </button>
-        <button className="menu-command flex items-center gap-[8px] py-[3px]" onClick={() => onOpen("defrag")}>
-          <FloppyyIcon type="defrag" size={16} />
-          <span>Disk Defragmenter</span>
-        </button>
-        <button className="menu-command flex items-center gap-[8px] py-[3px]" onClick={() => onOpen("help")}>
-          <img src="/icons/help.png" alt="" width={16} height={16} style={{ imageRendering: "pixelated" }} draggable={false} />
-          <span>Help</span>
-        </button>
-        <button className="menu-command flex items-center gap-[8px] py-[3px]" onClick={() => onOpen("run")}>
-          <FloppyyIcon type="run" size={16} />
-          <span>Run...</span>
-        </button>
-        <div className="mx-[3px] my-[2px] h-[1px] bg-[#808080] shadow-[0_1px_0_#fff]" />
-
-        <button className="menu-command flex items-center gap-[8px] py-[3px]" onClick={onShutdown}>
-          <img src="/icons/shutdown.png" alt="" width={16} height={16} style={{ imageRendering: "pixelated" }} draggable={false} />
-          <span>Shut Down...</span>
-        </button>
+        ))}
+        <hr className="my-1 border-[#808080]" />
+        {command("My Computer", "computer", () => onOpen("computer"))}
+        {command("Norton Commander", "console", () => onOpen("norton"))}
+        {command("Disk Defragmenter", "defrag", () => onOpen("defrag"))}
+        {command("Help", "help", () => onOpen("help"))}
+        {command("Run...", "run", () => onOpen("run"))}
+        <hr className="my-1 border-[#808080]" />
+        {command("Shut Down...", "shutdown", onShutdown)}
       </div>
+      {openSub && <div ref={panel} id={`start-${openSub}`} aria-label={openSub} className="start-submenu min-w-0 flex-1 overflow-y-auto bg-[#c0c0c0] py-[3px] sm:fixed sm:w-[210px] max-h-[calc(100dvh-44px)]" style={{ "--menu-left": `${position.left}px`, "--menu-top": `${position.top}px`, boxShadow: menuShadow } as React.CSSProperties}>
+        <button className="menu-command start-command sm:hidden" onClick={() => setOpenSub(null)}>Back</button>
+        {entries[openSub].map((entry) => <button key={entry.label} className="menu-command start-command flex items-center gap-2" onClick={entry.action}>
+          <FloppyyIcon type={entry.icon} size={16} /><span className="min-w-0 break-words">{entry.label}</span>
+        </button>)}
+      </div>}
     </div>
   );
 }

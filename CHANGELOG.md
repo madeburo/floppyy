@@ -1,8 +1,26 @@
 # Changelog
 
-## Unreleased
+## 3.8.0 - 2026-10-06
+
+### Fixed
+- Notepad now downloads text when Save is selected, protects modified documents on close/replacement, and restores local drafts.
+- Game keyboard handlers ignore text fields and inactive windows; games pause when hidden, and Typing Tutor keeps time while typing.
+- Checkers no longer captures empty squares, handles blocked players, and correctly ends capture chains on promotion.
+- Tetris checks new pieces against the updated board, and Breakout cannot bounce a ball back after it has passed the paddle.
+- Solitaire fills its mobile window without clipping columns or leaving unused grey space.
+- Start submenus remain reachable on small screens; restored and resized windows keep their title bar controls visible.
+- Guest Book removes confirmed moderator deletions, including the newest or last message, without dropping older pages or newer local posts.
+- Display Properties now stages wallpaper changes until Apply/OK and persists the screen saver mode and delay. Unsupported settings are disabled.
+
+### Added
+- Shared pause/restart/end-of-game dialogs, larger mobile controls, and a desktop layout reset that preserves other settings.
+- A shared game catalog for Start and Games folders, focused logic tests, desktop/mobile browser regressions, and GitHub Actions checks.
+- A versioned health endpoint and staged PM2 deployment with health checks and automatic build rollback.
 
 ### Changed
+- Guest Book loads older messages on demand. Guest Book and Outlook polling pauses while hidden.
+- Split arcade games into separate components and extracted reusable game/layout logic.
+- Release version is shared by Credits, Help, and the health endpoint; refreshed the offline cache name.
 - Updated Next.js and `eslint-config-next` to 16.3.8, and React / React DOM to 19.3.0.
 - Updated ESLint to 10.12.0, the ESLint compatibility packages, and Node / React type definitions.
 - Refreshed dependency locks and aligned the documented Node.js requirement with the development toolchain.

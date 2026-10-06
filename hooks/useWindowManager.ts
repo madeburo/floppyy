@@ -1,25 +1,11 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { DesktopWindow, WindowId, windowDefinitions } from "@/lib/windows";
+import { fitWindow, initialWindowSize } from "@/lib/windowGeometry";
 
 const STORAGE_KEY = "floppyy-windows";
 const SAVE_DEBOUNCE_MS = 400;
-const TALL_MOBILE_WINDOWS = new Set<WindowId>(["internet", "screensaver", "share", "solitaire"]);
-const COMPACT_MOBILE_WINDOWS = new Set<WindowId>([
-  "minesweeper",
-  "snake",
-  "tetris",
-  "breakout",
-  "pixel-puzzle",
-  "typing-game",
-  "checkers",
-]);
-
-function mobileWindowHeight(id: WindowId, defaultHeight: number) {
-  if (id === "solitaire") return Math.min(defaultHeight, 360);
-  return defaultHeight;
-}
 
 function clamp(value: number, min: number, max: number) {
   return Math.max(min, Math.min(max, value));
@@ -46,27 +32,20 @@ function loadPersistedWindows(): DesktopWindow[] {
         typeof item.x !== "number" ||
         typeof item.y !== "number" ||
         typeof item.width !== "number" ||
-        typeof item.height !== "number"
+        typeof item.height !== "number" ||
+        ![item.x, item.y, item.width, item.height].every(Number.isFinite)
       ) {
         return [];
       }
 
-      const mobile = viewportWidth < 640;
-      const mobileHeightLimit = TALL_MOBILE_WINDOWS.has(definition.id)
-        ? Math.round(viewportHeight * 0.9)
-        : Math.round(viewportHeight * 0.72);
-      const maxWidth = mobile && COMPACT_MOBILE_WINDOWS.has(definition.id)
-        ? Math.min(definition.width, Math.max(200, viewportWidth - 16))
-        : Math.max(200, viewportWidth - 16);
-      const maxHeight = mobile
-        ? mobileWindowHeight(definition.id, Math.min(definition.height, Math.max(120, viewportHeight - 42), Math.max(320, mobileHeightLimit)))
-        : Math.max(120, viewportHeight - 42);
+      const maxWidth = Math.max(1, viewportWidth - 16);
+      const maxHeight = Math.max(1, viewportHeight - 44);
       const minWidth = Math.min(definition.minWidth ?? 200, maxWidth);
       const minHeight = Math.min(definition.minHeight ?? 120, maxHeight);
       const width = clamp(item.width, minWidth, maxWidth);
       const height = clamp(item.height, minHeight, maxHeight);
       return [
-        {
+        fitWindow({
           instanceId: item.instanceId,
           id: item.id as WindowId,
           title: typeof item.title === "string" ? item.title : definition.title,
@@ -76,10 +55,10 @@ function loadPersistedWindows(): DesktopWindow[] {
           width,
           height,
           minimized: Boolean(item.minimized),
-          maximized: Boolean(item.maximized),
+          maximized: !definition.noMaximize && Boolean(item.maximized),
           zIndex: typeof item.zIndex === "number" ? item.zIndex : 10,
           payload: typeof item.payload === "string" ? item.payload : undefined,
-        },
+        }, { width: viewportWidth, height: viewportHeight }),
       ];
     });
   } catch {
@@ -89,6 +68,11 @@ function loadPersistedWindows(): DesktopWindow[] {
 
 export function useWindowManager() {
   const [windows, setWindows] = useState<DesktopWindow[]>(loadPersistedWindows);
+  const guards = useRef(new Map<string, (proceed: () => void) => void>());
+  const registerCloseGuard = useCallback((instanceId: string, guard: (proceed: () => void) => void) => {
+    guards.current.set(instanceId, guard);
+    return () => { if (guards.current.get(instanceId) === guard) guards.current.delete(instanceId); };
+  }, []);
   const [zCounter, setZCounter] = useState(() => windows.reduce((max, item) => Math.max(max, item.zIndex), 10));
 
   const nextZ = useCallback(() => {
@@ -116,6 +100,7 @@ export function useWindowManager() {
             : definition.title;
       const instanceId =
         (id === "project-details" || id === "drive") && payload ? `${id}-${payload}` : id;
+      const applyOpen = () => {
       setWindows((items) => {
         const existing = items.find((item) => item.instanceId === instanceId);
         const maxZ = Math.max(10, ...items.map((item) => item.zIndex)) + 1;
@@ -129,17 +114,7 @@ export function useWindowManager() {
         const viewportWidth = typeof window === "undefined" ? 1024 : window.innerWidth;
         const viewportHeight = typeof window === "undefined" ? 768 : window.innerHeight;
         const mobile = viewportWidth < 640;
-        const width = mobile
-          ? COMPACT_MOBILE_WINDOWS.has(id)
-            ? Math.min(definition.width, viewportWidth - 16)
-            : viewportWidth - 16
-          : Math.min(definition.width, viewportWidth - 32);
-        const mobileHeightLimit = TALL_MOBILE_WINDOWS.has(id)
-          ? Math.round(viewportHeight * 0.9)
-          : Math.round(viewportHeight * 0.72);
-        const height = mobile
-          ? mobileWindowHeight(id, Math.min(definition.height, Math.max(320, mobileHeightLimit), viewportHeight - 42))
-          : Math.min(definition.height, viewportHeight - 42);
+        const { width, height } = initialWindowSize(definition, { width: viewportWidth, height: viewportHeight });
         return [
           ...items,
           {
@@ -169,12 +144,20 @@ export function useWindowManager() {
           },
         ];
       });
+      };
+      const existing = windows.find((item) => item.instanceId === instanceId);
+      const guard = existing?.payload !== payload ? guards.current.get(instanceId) : undefined;
+      if (guard) guard(applyOpen);
+      else applyOpen();
     },
-    [],
+    [windows],
   );
 
   const closeWindow = useCallback((instanceId: string) => {
-    setWindows((items) => items.filter((item) => item.instanceId !== instanceId));
+    const proceed = () => setWindows((items) => items.filter((item) => item.instanceId !== instanceId));
+    const guard = guards.current.get(instanceId);
+    if (guard) guard(proceed);
+    else proceed();
   }, []);
 
   const minimizeWindow = useCallback((instanceId: string) => {
@@ -195,8 +178,7 @@ export function useWindowManager() {
         item.instanceId === instanceId
           ? {
               ...item,
-              x: clamp(x, 0, window.innerWidth - 80),
-              y: clamp(y, 0, window.innerHeight - 60),
+              ...fitWindow({ ...item, x, y }, { width: window.innerWidth, height: window.innerHeight }),
             }
           : item,
       ),
@@ -227,6 +209,28 @@ export function useWindowManager() {
   }, []);
 
   useEffect(() => {
+    const updateVisualBounds = () => {
+      const viewport = window.visualViewport;
+      if (viewport && viewport.scale !== 1) return;
+      const bounds = { width: viewport?.width ?? window.innerWidth, height: viewport?.height ?? window.innerHeight, left: viewport?.offsetLeft ?? 0, top: viewport?.offsetTop ?? 0 };
+      for (const [key, value] of Object.entries(bounds)) document.documentElement.style.setProperty(`--viewport-${key}`, `${value}px`);
+    };
+    const fit = () => {
+      updateVisualBounds();
+      setWindows((items) => items.map((item) => fitWindow(item, { width: window.innerWidth, height: window.innerHeight })));
+    };
+    updateVisualBounds();
+    window.addEventListener("resize", fit);
+    window.visualViewport?.addEventListener("resize", updateVisualBounds);
+    window.visualViewport?.addEventListener("scroll", updateVisualBounds);
+    return () => {
+      window.removeEventListener("resize", fit);
+      window.visualViewport?.removeEventListener("resize", updateVisualBounds);
+      window.visualViewport?.removeEventListener("scroll", updateVisualBounds);
+    };
+  }, []);
+
+  useEffect(() => {
     if (typeof window === "undefined") return;
     const timer = window.setTimeout(() => {
       try {
@@ -251,6 +255,7 @@ export function useWindowManager() {
   return useMemo(
     () => ({
       windows,
+      registerCloseGuard,
       activeWindow,
       openWindow,
       closeWindow,
@@ -264,6 +269,7 @@ export function useWindowManager() {
     }),
     [
       windows,
+      registerCloseGuard,
       activeWindow,
       openWindow,
       closeWindow,

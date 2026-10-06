@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import type { WindowComponentProps } from "@/lib/windows";
 import { ToolbarIcon } from "./ToolbarIcon";
+import { GAME_REGISTRY } from "@/lib/gameRegistry";
 
 type DriveId = "A" | "C" | "D";
 type DriveItem = {
@@ -109,7 +110,6 @@ const driveFiles: Record<DriveId, Record<string, DriveItem[]>> = {
       { id: "clouds-doc", label: "Clouds.bmp", icon: "painticon", description: "Bitmap Image", kind: "file" },
       { id: "aol", label: "AOL.url", icon: "url", description: "Internet Shortcut", kind: "file" },
       { id: "readme", label: "README.txt", icon: "notepad", description: "Text Document", kind: "file" },
-      { id: "projects", label: "Projects", icon: "directory_net", description: "File Folder", kind: "folder" },
     ],
     Projects: [
       { id: "brewwery", label: "Brewwery", icon: "folder", description: "A visual Homebrew manager for macOS.", kind: "file" },
@@ -117,21 +117,7 @@ const driveFiles: Record<DriveId, Record<string, DriveItem[]>> = {
       { id: "titanbase", label: "Titanbase", icon: "folder", description: "Visual Schema Designer For Developers and Product Teams.", kind: "file" },
       { id: "floppyy", label: "Floppyy", icon: "folder", description: "A retro computer in your browser.", kind: "file" },
     ],
-    Games: [
-      { id: "mines", label: "Minesweeper.exe", icon: "mine", description: "Application", kind: "file" },
-      { id: "solitaire", label: "Solitaire.exe", icon: "cards", description: "Application", kind: "file" },
-      { id: "doom", label: "Doom.exe", icon: "doom", description: "Application", kind: "file" },
-      { id: "duke3d", label: "Duke3D.exe", icon: "duke3d", description: "Application", kind: "file" },
-      { id: "wolf3d", label: "Wolf3D.exe", icon: "wolfenstein", description: "Application", kind: "file" },
-      { id: "dune2", label: "Dune2.exe", icon: "dune2", description: "Application", kind: "file" },
-      { id: "warcraft", label: "War.exe", icon: "warcraft", description: "Application", kind: "file" },
-      { id: "snake", label: "Snake.exe", icon: "snake", description: "Application", kind: "file" },
-      { id: "tetris", label: "Tetris.exe", icon: "tetris", description: "Application", kind: "file" },
-      { id: "breakout", label: "Breakout.exe", icon: "breakout", description: "Application", kind: "file" },
-      { id: "puzzle", label: "PixelPuzzle.exe", icon: "pixelpuzzle", description: "Application", kind: "file" },
-      { id: "typing", label: "TypingTutor.exe", icon: "typingtutor", description: "Application", kind: "file" },
-      { id: "checkers", label: "Checkers.exe", icon: "checkers", description: "Application", kind: "file" },
-    ],
+    Games: GAME_REGISTRY.map((game) => ({ ...game, kind: "file" })),
   },
   D: {
     "": [
@@ -256,6 +242,10 @@ export function DriveWindow({ window, notify, openWindow, playSound }: WindowCom
   };
 
   const openItem = (item: DriveItem) => {
+    if (drive === "C" && path === "Games") {
+      const game = GAME_REGISTRY.find((game) => game.id === item.id);
+      if (game) { openWindow(game.id); playSound("open"); return; }
+    }
     if (drive === "C" && (path === "" || path === "My Documents") && item.id === "projects") {
       playSound("open");
       openWindow("projects");
@@ -342,6 +332,7 @@ export function DriveWindow({ window, notify, openWindow, playSound }: WindowCom
         {toolbarButtons.map((button) => (
           <button
             key={button.label}
+            disabled={button.action === "noop" || (button.action === "back" && !history.length) || (button.action === "properties" && !selectedItem)}
             className="group flex h-[44px] w-[50px] cursor-default flex-col items-center justify-center text-[10px] hover:bg-[#dfdfdf]"
             onClick={() => runToolbar(button.action, button.label)}
           >

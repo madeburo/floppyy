@@ -22,6 +22,7 @@ type Store = {
   list: (options?: { limit?: number; before?: number }) => Promise<GuestbookMessage[]>;
   count: () => Promise<number>;
   remove: (id: number) => Promise<boolean>;
+  existingIds: (ids: number[]) => Promise<number[]>;
 };
 
 function clampLimit(limit?: number): number {
@@ -88,6 +89,14 @@ function rowToMessage(row: Row): GuestbookMessage {
 }
 
 const postgresStore: Store = {
+  async existingIds(ids) {
+    if (!ids.length) return [];
+    const client = getSql();
+    if (!client) throw new Error("Postgres not configured");
+    await ensureSchema(client);
+    const rows = await client<{ id: string }[]>`SELECT id FROM guestbook_messages WHERE id IN ${client(ids)}`;
+    return rows.map((row) => Number(row.id));
+  },
   async add(message) {
     const client = getSql();
     if (!client) throw new Error("Postgres not configured");
@@ -156,6 +165,10 @@ const memory: GuestbookMessage[] = [];
 let memoryId = 0;
 
 const memoryStore: Store = {
+  async existingIds(ids) {
+    const wanted = new Set(ids);
+    return memory.filter((message) => wanted.has(message.id)).map((message) => message.id);
+  },
   async add(message) {
     memoryId += 1;
     const entry: GuestbookMessage = {

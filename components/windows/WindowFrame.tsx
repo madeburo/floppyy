@@ -21,8 +21,14 @@ export function WindowFrame({ window, active, children, onFocus, onClose, onMini
   const resize = useRef<{ x: number; y: number; width: number; height: number } | null>(null);
 
   const style = window.maximized
-    ? { left: 0, top: 0, width: "100vw", height: "calc(100vh - 28px)", zIndex: window.zIndex }
-    : { left: window.x, top: window.y, width: window.width, height: window.height, zIndex: window.zIndex };
+    ? { left: "var(--viewport-left, 0px)", top: "var(--viewport-top, 0px)", width: "var(--viewport-width, 100vw)", height: "calc(var(--viewport-height, 100dvh) - 28px)", zIndex: window.zIndex }
+    : {
+        left: `clamp(calc(var(--viewport-left, 0px) + 8px), ${window.x}px, calc(var(--viewport-left, 0px) + var(--viewport-width, 100vw) - min(${window.width}px, var(--viewport-width, 100vw) - 16px) - 8px))`,
+        top: `clamp(calc(var(--viewport-top, 0px) + 8px), ${window.y}px, calc(var(--viewport-top, 0px) + var(--viewport-height, 100dvh) - min(${window.height}px, var(--viewport-height, 100dvh) - 44px) - 36px))`,
+        width: `min(${window.width}px, var(--viewport-width, 100vw) - 16px)`,
+        height: `min(${window.height}px, var(--viewport-height, 100dvh) - 44px)`,
+        zIndex: window.zIndex,
+      };
 
   return (
     <div
@@ -63,7 +69,8 @@ export function WindowFrame({ window, active, children, onFocus, onClose, onMini
         onPointerDown={(event) => {
           if (window.maximized) return;
           onFocus();
-          drag.current = { dx: event.clientX - window.x, dy: event.clientY - window.y };
+          const rect = event.currentTarget.parentElement!.getBoundingClientRect();
+          drag.current = { dx: event.clientX - rect.x, dy: event.clientY - rect.y };
           event.currentTarget.setPointerCapture(event.pointerId);
         }}
       />

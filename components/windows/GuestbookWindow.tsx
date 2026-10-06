@@ -5,12 +5,13 @@ import type { CSSProperties, ReactNode } from "react";
 import type { WindowComponentProps } from "@/lib/windows";
 import { Win98Select } from "@/components/ui/Win98Select";
 import {
-  fetchGuestbookHistory,
-  fetchGuestbookMessages,
+  fetchGuestbookPage,
+  fetchGuestbookSnapshot,
   forgetGuestbookMessage,
   mergeGuestbookMessages,
   rememberGuestbookMessage,
 } from "@/lib/guestbook/client";
+import { useWindowActivity } from "./WindowActivity";
 import { onProfileChange, readProfile, writeProfile } from "@/lib/profile";
 import {
   BODY_MAX_LENGTH,
@@ -19,6 +20,8 @@ import {
   GuestbookAvatar,
   GuestbookMessage,
   NICK_MAX_LENGTH,
+  MAX_PAGE_SIZE,
+  DEFAULT_PAGE_SIZE,
   STATUS_META,
   STATUS_OPTIONS,
   UserStatus,
@@ -151,7 +154,12 @@ function readAdminToken(): string {
 }
 
 export function GuestbookWindow({ notify, playSound, warmSound }: WindowComponentProps) {
+  const { visible } = useWindowActivity();
   const [messages, setMessages] = useState<GuestbookMessage[]>([]);
+  const messagesRef = useRef<GuestbookMessage[]>([]);
+  const pollOffset = useRef(0);
+  const [hasOlder, setHasOlder] = useState(true);
+  const [loadingOlder, setLoadingOlder] = useState(false);
   const [nick, setNick] = useState(readStoredNick);
   const [status, setStatus] = useState<UserStatus>(readStoredStatus);
   const [avatar, setAvatar] = useState<GuestbookAvatar>(() => readProfile().avatar);
@@ -183,8 +191,8 @@ export function GuestbookWindow({ notify, playSound, warmSound }: WindowComponen
   }, [warmSound]);
 
   const applyMessages = useCallback(
-    (incoming: GuestbookMessage[]) => {
-      setMessages((current) => mergeGuestbookMessages(current, incoming));
+    (incoming: GuestbookMessage[], deletedIds: number[] = []) => {
+      setMessages((current) => mergeGuestbookMessages(current, incoming, deletedIds));
       const newest = incoming.length ? incoming[incoming.length - 1].id : 0;
       if (initialised.current && newest > lastSeenId.current) {
         const fromOthers = incoming.some(
@@ -198,32 +206,54 @@ export function GuestbookWindow({ notify, playSound, warmSound }: WindowComponen
     [playSound],
   );
 
-  // First load pulls the whole history so the very first entries stay visible;
-  // polling afterwards only needs the newest page.
-  const fetchMessages = useCallback(
-    async (mode: "history" | "poll" = "poll") => {
-      try {
-        const messages =
-          mode === "history" ? await fetchGuestbookHistory() : await fetchGuestbookMessages();
-        applyMessages(messages);
-        setError(null);
-      } catch {
-        if (!initialised.current) setError("Could not connect to #floppyy.");
-      } finally {
-        setLoading(false);
-      }
-    },
-    [applyMessages],
-  );
+  useEffect(() => { messagesRef.current = messages; }, [messages]);
 
   useEffect(() => {
-    const initialTimer = window.setTimeout(() => fetchMessages("history"), 0);
-    const timer = window.setInterval(() => fetchMessages("poll"), POLL_INTERVAL_MS);
+    if (!visible) return;
+    let disposed = false;
+    let fetching = false;
+    const poll = async () => {
+      if (fetching) return;
+      fetching = true;
+      try {
+        const current = messagesRef.current;
+        const offset = pollOffset.current % Math.max(1, current.length);
+        const checkIds = [...current.slice(offset), ...current.slice(0, offset)].slice(0, 100).map((message) => message.id);
+        const snapshot = await fetchGuestbookSnapshot(checkIds);
+        if (disposed) return;
+        if (!initialised.current) setHasOlder(snapshot.messages.length >= DEFAULT_PAGE_SIZE);
+        applyMessages(snapshot.messages, snapshot.deletedIds);
+        pollOffset.current += 100;
+        setError(null);
+      } catch {
+        if (!disposed && !initialised.current) setError("Could not connect to #floppyy.");
+      } finally {
+        fetching = false;
+        if (!disposed) setLoading(false);
+      }
+    };
+    void poll();
+    const timer = window.setInterval(poll, POLL_INTERVAL_MS);
     return () => {
-      window.clearTimeout(initialTimer);
+      disposed = true;
       window.clearInterval(timer);
     };
-  }, [fetchMessages]);
+  }, [applyMessages, visible]);
+
+  const loadOlder = async () => {
+    if (loadingOlder || !messages.length) return;
+    setLoadingOlder(true);
+    const height = logRef.current?.scrollHeight ?? 0;
+    const top = logRef.current?.scrollTop ?? 0;
+    pinnedToBottom.current = false;
+    try {
+      const older = await fetchGuestbookPage(messages[0].id);
+      setHasOlder(older.length === MAX_PAGE_SIZE);
+      setMessages((current) => mergeGuestbookMessages(current, older));
+      requestAnimationFrame(() => { if (logRef.current) logRef.current.scrollTop = top + logRef.current.scrollHeight - height; });
+    } catch { setError("Could not load older messages."); }
+    finally { setLoadingOlder(false); }
+  };
 
   // Keep the log pinned to the newest line, but don't yank the view away while
   // someone is scrolled up reading the old entries.
@@ -397,6 +427,7 @@ export function GuestbookWindow({ notify, playSound, warmSound }: WindowComponen
             *** Channel rules: 1) Mutual respect &nbsp;2) No advertising &nbsp;3) No spam or flooding
           </div>
           {adminToken && <div className="text-[#000080]">*** Operator mode is active. Click x to remove spam.</div>}
+          {hasOlder && messages.length > 0 && <button className="win-button mb-2" disabled={loadingOlder} onClick={() => void loadOlder()}>{loadingOlder ? "Loading..." : "Older messages"}</button>}
           {loading && messages.length === 0 && (
             <div className="text-[#808080]">*** Connecting to server...</div>
           )}

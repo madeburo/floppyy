@@ -45,6 +45,8 @@ Thumbs.db
 
 # Testing
 coverage/
+playwright-report/
+test-results/
 .nyc_output
 
 # Misc

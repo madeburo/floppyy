@@ -5,30 +5,7 @@ import type { WindowComponentProps, WindowId } from "@/lib/windows";
 import { ToolbarIcon } from "./ToolbarIcon";
 import { FloppyyIcon } from "@/components/desktop/FloppyyIcon";
 
-type GameEntry = {
-  id: WindowId;
-  label: string;
-  icon: string;
-  description: string;
-};
-
-// Every Floppyy game lives here. Icons resolve from /public/icons/<icon>.png
-// with an SVG fallback, so new PNGs can be dropped in later.
-const GAMES: GameEntry[] = [
-  { id: "minesweeper", label: "Minesweeper.exe", icon: "mine", description: "Classic mine-clearing puzzle" },
-  { id: "solitaire", label: "Solitaire.exe", icon: "cards", description: "Klondike solitaire card game" },
-  { id: "doom", label: "DOOM.exe", icon: "doom", description: "id Software's legendary FPS" },
-  { id: "duke3d", label: "Duke Nukem 3D.exe", icon: "duke3d", description: "Come get some. 3D Realms FPS" },
-  { id: "wolf3d", label: "Wolfenstein 3D.exe", icon: "wolfenstein", description: "The original first-person shooter" },
-  { id: "dune2", label: "Dune II.exe", icon: "dune2", description: "The real-time strategy pioneer" },
-  { id: "warcraft", label: "WarCraft.exe", icon: "warcraft", description: "Blizzard's first RTS" },
-  { id: "snake", label: "Snake.exe", icon: "snake", description: "Retro grid snake with local high score" },
-  { id: "tetris", label: "Tetris.exe", icon: "tetris", description: "Falling blocks, rows, and old keyboard reflexes" },
-  { id: "breakout", label: "Breakout.exe", icon: "breakout", description: "Break every brick before the ball escapes" },
-  { id: "pixel-puzzle", label: "Pixel Puzzle.exe", icon: "pixelpuzzle", description: "Slide the tiles back into order" },
-  { id: "typing-game", label: "Typing Tutor.exe", icon: "typingtutor", description: "Type the retro words before the clock runs out" },
-  { id: "checkers", label: "Checkers.exe", icon: "checkers", description: "Two-player checkerboard for the desktop" },
-];
+import { GAME_REGISTRY as GAMES, type GameEntry } from "@/lib/gameRegistry";
 
 const toolbarButtons = [
   { label: "Back", icon: "back", action: "back" },
@@ -54,7 +31,7 @@ export function GamesFolderWindow({ window: win, openWindow, closeWindow, notify
   };
 
   const runToolbar = (action: string, label: string) => {
-    if (action === "up") {
+    if (action === "up" || action === "back") {
       // Up one level = back to the Desktop, which just means closing the folder.
       playSound("click");
       closeWindow(win.instanceId);
@@ -90,7 +67,8 @@ export function GamesFolderWindow({ window: win, openWindow, closeWindow, notify
         {toolbarButtons.map((button) => (
           <button
             key={button.label}
-            className="group flex h-[44px] w-[50px] cursor-default flex-col items-center justify-center text-[10px] hover:bg-[#dfdfdf]"
+            disabled={button.action === "noop" || (button.action === "properties" && !selectedGame)}
+            className="group flex h-[44px] w-[50px] cursor-default flex-col items-center justify-center text-[10px] hover:bg-[#dfdfdf] disabled:opacity-50 max-sm:disabled:hidden"
             onClick={() => runToolbar(button.action, button.label)}
           >
             <span className="flex h-[20px] items-center justify-center grayscale transition-[filter] duration-150 group-hover:grayscale-0">
@@ -113,7 +91,7 @@ export function GamesFolderWindow({ window: win, openWindow, closeWindow, notify
       {/* Body: info panel + icon area */}
       <div className="flex min-h-0 flex-1 border-t border-[#dfdfdf] bg-white">
         <aside
-          className="relative flex w-[150px] shrink-0 flex-col overflow-hidden border-r border-[#c0c0c0] p-3"
+          className="relative hidden w-[150px] shrink-0 flex-col overflow-hidden border-r border-[#c0c0c0] p-3 sm:flex"
           style={{
             background:
               "radial-gradient(circle at 8% 20%, rgba(255,255,255,0.95) 0 18%, rgba(255,255,255,0) 34%), linear-gradient(135deg, #d9f5ff 0%, #ffffff 52%, #ffffff 100%)",
@@ -140,6 +118,8 @@ export function GamesFolderWindow({ window: win, openWindow, closeWindow, notify
                     playSound("click");
                   }}
                   onDoubleClick={() => open(game)}
+                  onPointerUp={(event) => { if (event.pointerType === "touch") open(game); }}
+                  onKeyDown={(event) => { if (event.key === "Enter") { event.preventDefault(); open(game); } }}
                 >
                   <span
                     className="relative inline-flex h-[36px] w-[36px] items-center justify-center p-[2px]"
@@ -182,6 +162,8 @@ export function GamesFolderWindow({ window: win, openWindow, closeWindow, notify
                     playSound("click");
                   }}
                   onDoubleClick={() => open(game)}
+                  onPointerUp={(event) => { if (event.pointerType === "touch") open(game); }}
+                  onKeyDown={(event) => { if (event.key === "Enter") { event.preventDefault(); open(game); } }}
                 >
                   <div className="flex min-w-0 items-center gap-1 px-2">
                     <FloppyyIcon type={game.icon} size={16} />

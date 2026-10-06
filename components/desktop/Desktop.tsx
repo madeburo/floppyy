@@ -12,6 +12,8 @@ import { NotificationDialog } from "./NotificationDialog";
 import { StartMenu } from "./StartMenu";
 import { Taskbar } from "./Taskbar";
 import { WindowFrame } from "@/components/windows/WindowFrame";
+import { WindowActivity } from "@/components/windows/WindowActivity";
+import { isTextInput } from "@/lib/keyboard";
 import { AboutWindow } from "@/components/windows/AboutWindow";
 import { CalculatorWindow } from "@/components/windows/CalculatorWindow";
 import { ComputerWindow } from "@/components/windows/ComputerWindow";
@@ -197,6 +199,7 @@ function readStoredIconPositions(): Record<string, IconPosition> {
     if (!parsed || typeof parsed !== "object") return positions;
     const hasEveryCurrentIcon = desktopIcons.every((icon) => parsed[icon.id]);
     if (!hasEveryCurrentIcon) return positions;
+    if (Object.values(parsed).some((position) => !position || !Number.isFinite(position.x) || !Number.isFinite(position.y) || position.x < 0 || position.y < 0 || position.x + 64 > window.innerWidth || position.y + 70 > window.innerHeight - 28)) return positions;
 
     if (!globalThis.localStorage.getItem(SUPPORT_ICON_POSITION_MIGRATION) && parsed.support) {
       globalThis.localStorage.setItem(SUPPORT_ICON_POSITION_MIGRATION, "1");
@@ -263,7 +266,7 @@ export default function Desktop() {
       !item.minimized &&
       (GAME_WINDOW_IDS.has(item.id) || (item.id === "mediaplayer" && !!item.payload)),
   );
-  const screensaver = useScreensaver(60000, screensaverSuppressed);
+  const screensaver = useScreensaver(screensaverSuppressed);
   useServiceWorker();
 
   // Persist wallpaper + icon layout when they change (after initial load).
@@ -498,6 +501,17 @@ export default function Desktop() {
     playSound("click");
   }, [playSound]);
 
+  useEffect(() => {
+    const fitIcons = () => {
+      setIconPositions((positions) => {
+        const outside = Object.values(positions).some((point) => point.x + ICON_WIDTH > window.innerWidth || point.y + ICON_HEIGHT > window.innerHeight - TASKBAR_HEIGHT || !Number.isFinite(point.x) || !Number.isFinite(point.y));
+        return outside ? initialIconPositions() : positions;
+      });
+    };
+    window.addEventListener("resize", fitIcons);
+    return () => window.removeEventListener("resize", fitIcons);
+  }, []);
+
   const lineUpIcons = useCallback(() => {
     const orderedIds = desktopIcons
       .map((icon) => icon.id)
@@ -645,7 +659,7 @@ export default function Desktop() {
       case "norton":
         return <NortonCommanderWindow {...props} />;
       case "notepad":
-        return <NotepadWindow {...props} />;
+        return <NotepadWindow key={props.window.payload ?? "untitled"} {...props} />;
       case "outlook":
         return <OutlookWindow {...props} />;
       case "paint":
@@ -715,7 +729,7 @@ export default function Desktop() {
         event.preventDefault();
         crashSystem({ variant: "cascade" });
       }
-      if (event.key === "Enter" && selectedIcons.size > 0) {
+      if (event.key === "Enter" && !isTextInput(event.target) && !(event.target instanceof HTMLElement && event.target.closest('[role="dialog"], [role="menu"], [aria-label="Start menu"]')) && selectedIcons.size > 0) {
         const firstId = selectedIcons.values().next().value;
         const icon = desktopIcons.find((item) => item.id === firstId);
         if (icon?.windowId) openWindow(icon.windowId, icon.payload);
@@ -755,12 +769,17 @@ export default function Desktop() {
       },
       minimizeWindow,
       resizeWindow,
+      registerCloseGuard: wm.registerCloseGuard,
       notify,
       playSound,
       warmSound,
       fadeOutSound,
       startScreensaver: screensaver.start,
       setDefaultScreensaver: screensaver.setMode,
+      screensaverMode: screensaver.defaultMode,
+      screensaverWait: screensaver.waitMinutes,
+      setScreensaverWait: screensaver.setWaitMinutes,
+      resetDesktopLayout: arrangeIcons,
       crashSystem,
       wallpaper,
       setWallpaper: (id: string) => {
@@ -778,10 +797,15 @@ export default function Desktop() {
       fadeOutSound,
       screensaver.start,
       screensaver.setMode,
+      screensaver.defaultMode,
+      screensaver.waitMinutes,
+      screensaver.setWaitMinutes,
+      arrangeIcons,
       crashSystem,
       wallpaper,
       minimizeWindow,
       resizeWindow,
+      wm.registerCloseGuard,
       dialupDone,
       muted,
     ],
@@ -1260,7 +1284,9 @@ function DesktopWindows({
         onMove={(x, y) => moveWindow(item.instanceId, x, y)}
         onResize={(width, height) => resizeWindow(item.instanceId, width, height)}
       >
-        {renderWindow({ window: item, ...commonProps })}
+        <WindowActivity value={{ active: activeWindow?.instanceId === item.instanceId, visible: !item.minimized }}>
+          {renderWindow({ window: item, ...commonProps })}
+        </WindowActivity>
       </WindowFrame>
     );
   });

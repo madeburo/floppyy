@@ -1,4 +1,4 @@
-const CACHE_NAME = "floppyy-v2";
+const CACHE_NAME = "floppyy-v3.8.0";
 const MAX_CACHE_SIZE = 50;
 const OFFLINE_URLS = [
   "/",

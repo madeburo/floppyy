@@ -30,7 +30,8 @@ function payloadToTab(payload?: string): GameTab {
   return "mines";
 }
 
-export function GamesWindow({ playSound, window }: WindowComponentProps) {
+export function GamesWindow({ playSound, window, closeWindow }: WindowComponentProps) {
+  const gameProps = { playSound, onExit: () => closeWindow(window.instanceId), windowWidth: window.width - 32 };
   const [tab, setTab] = useState<GameTab>(() => payloadToTab(window.payload));
   const [prevPayload, setPrevPayload] = useState(window.payload);
 
@@ -52,14 +53,14 @@ export function GamesWindow({ playSound, window }: WindowComponentProps) {
         ))}
       </div>
       <div className="win-bevel-inset min-h-0 flex-1 overflow-auto bg-[#c0c0c0] p-3">
-        {tab === "snake" && <SnakeGame playSound={playSound} />}
-        {tab === "tetris" && <TetrisGame playSound={playSound} />}
-        {tab === "breakout" && <BreakoutGame playSound={playSound} />}
-        {tab === "pixel-puzzle" && <PixelPuzzleGame playSound={playSound} />}
-        {tab === "typing-game" && <TypingGame playSound={playSound} />}
-        {tab === "checkers" && <CheckersGame playSound={playSound} />}
-        {tab === "mines" && <Minesweeper playSound={playSound} />}
-        {tab === "solitaire" && <Solitaire playSound={playSound} />}
+        {tab === "snake" && <SnakeGame {...gameProps} />}
+        {tab === "tetris" && <TetrisGame {...gameProps} />}
+        {tab === "breakout" && <BreakoutGame {...gameProps} />}
+        {tab === "pixel-puzzle" && <PixelPuzzleGame {...gameProps} />}
+        {tab === "typing-game" && <TypingGame {...gameProps} />}
+        {tab === "checkers" && <CheckersGame {...gameProps} />}
+        {tab === "mines" && <Minesweeper {...gameProps} />}
+        {tab === "solitaire" && <Solitaire {...gameProps} />}
         {dosGame && <JsDosGame key={tab} bundleUrl={dosGame.bundle} playSound={playSound} />}
       </div>
     </div>

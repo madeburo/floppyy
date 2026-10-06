@@ -27,7 +27,7 @@ export function WindowTitleBar({ window, active, onMinimize, onMaximize, onClose
 
   return (
     <div
-      className={`flex h-[20px] items-center px-[2px] cursor-move select-none touch-none ${
+      className={`window-title-bar flex h-[20px] shrink-0 items-center px-[2px] cursor-move select-none touch-none ${
         active
           ? "bg-gradient-to-r from-[#000080] to-[#1084d0]"
           : "bg-gradient-to-r from-[#808080] to-[#b5b5b5]"

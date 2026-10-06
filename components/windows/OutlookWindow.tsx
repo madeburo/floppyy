@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { WindowComponentProps } from "@/lib/windows";
 import { fetchGuestbookMessages } from "@/lib/guestbook/client";
+import { useWindowActivity } from "./WindowActivity";
 
 type Folder = "inbox" | "outbox" | "sent" | "deleted" | "drafts";
 
@@ -84,6 +85,7 @@ See you on the information superhighway!
 type GbMessage = { id: number; nick: string; body: string; createdAt: string };
 
 export function OutlookWindow({ notify, playSound }: WindowComponentProps) {
+  const { visible } = useWindowActivity();
   const [emails, setEmails] = useState<Email[]>(INITIAL_EMAILS);
   const [folder, setFolder] = useState<Folder>("inbox");
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -113,6 +115,7 @@ export function OutlookWindow({ notify, playSound }: WindowComponentProps) {
 
   // ── Guestbook → Inbox bridge ────────────────────────────────────────────
   useEffect(() => {
+    if (!visible) return;
     let active = true;
 
     const makeEmail = (m: GbMessage, read: boolean): Email => ({
@@ -154,7 +157,7 @@ export function OutlookWindow({ notify, playSound }: WindowComponentProps) {
       active = false;
       window.clearInterval(timer);
     };
-  }, [playSound, notify]);
+  }, [playSound, notify, visible]);
 
   // ── Compose / send ────────────────────────────────────────────────────────
   const openCompose = (prefill?: Partial<typeof draft>) => {

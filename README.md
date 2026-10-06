@@ -8,7 +8,7 @@ Mostly.
 
 > The web you grew up on.
 
-![Floppyy](https://img.shields.io/badge/Floppyy-v3.7.0-008080?style=flat-square)
+![Floppyy](https://img.shields.io/badge/Floppyy-v3.8.0-008080?style=flat-square)
 ![Next.js](https://img.shields.io/badge/Next.js-16-black?style=flat-square&logo=next.js)
 ![TypeScript](https://img.shields.io/badge/TypeScript-6.0-blue?style=flat-square&logo=typescript)
 ![React](https://img.shields.io/badge/React-19-61dafb?style=flat-square&logo=react)
@@ -125,11 +125,33 @@ npm start
 # Lint / React Compiler checks
 npm run lint
 
+# Logic regression tests
+npm test
+
+# Browser regressions (desktop Chromium and mobile WebKit)
+npx playwright install chromium webkit
+npm run test:e2e
+
 # Dependency security audit
 npm audit
 ```
 
 Open [http://localhost:3000](http://localhost:3000) in your browser.
+
+## Reliability and Mobile Support
+
+- Notepad keeps local drafts and offers Save, Don't Save, or Cancel before replacing or closing modified text.
+- Games pause when their window is inactive or the browser tab is hidden. Arrow keys do not interfere with text fields.
+- Start submenus stay inside the screen; phones use a scrollable submenu with Back navigation.
+- Windows recover inside the viewport after resizing, and Solitaire sizes its cards to the available table width.
+- Guest Book loads older history on demand and checks loaded message IDs for moderator deletions. Hidden Guest Book and Outlook windows stop polling.
+- Display Properties applies changes only with Apply or OK, saves the screen saver delay, and offers Restore Desktop Layout without clearing other preferences.
+
+## Deployment
+
+Run `bash scripts/deploy.sh` from the server checkout. The script requires a clean Git checkout, `git`, `rsync`, `flock`, and an existing PM2 process named `floppyy` (override with `PM2_APP`). It installs, tests, and builds a staged checkout while the current site keeps serving, then stops only that app for the directory swap. Ignored server files, including environment files, are preserved. `/api/health` must return the expected version before the deploy succeeds; otherwise the previous checkout is restored.
+
+The default origin is `http://127.0.0.1:3018` (`HEALTH_URL` overrides it). Build backups are kept beside the checkout in `.floppyy-releases`; retain them until the release is verified. Cloudflare purge failure is reported separately and does not discard a healthy release. Environment files remain on the server and are never committed.
 
 
 ## License
