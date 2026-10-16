@@ -27,7 +27,7 @@ test.beforeEach(async ({ page }) => {
   await expect(page.getByRole("button", { name: "Start", exact: true })).toBeVisible({ timeout: 30_000 });
 });
 
-test("notes survive reload, download, rename, backup and non-destructive restore", async ({ page }) => {
+test("notes survive reload, download, rename, backup and non-destructive restore", async ({ page, browserName }) => {
   await page.getByRole("button", { name: "Notepad", exact: true }).dblclick();
   await page.getByRole("textbox", { name: "Text editor" }).fill("A personal note.\nSecond line.");
   await expect(page.getByText("Draft saved", { exact: true })).toBeVisible();
@@ -39,7 +39,9 @@ test("notes survive reload, download, rename, backup and non-destructive restore
   note = page.getByRole("dialog", { name: "My note.txt - Notepad", exact: true });
   await expect(note).toBeVisible();
   const text = await downloadedText(page, () => menu(note, "Download"));
-  expect(text).toEqual({ name: "My note.txt", content: "A personal note.\nSecond line." });
+  // Linux WebKit sanitizes spaces in suggested download names; stored names stay intact.
+  const downloadName = browserName === "webkit" && process.platform === "linux" ? "My_note.txt" : "My note.txt";
+  expect(text).toEqual({ name: downloadName, content: "A personal note.\nSecond line." });
   await note.getByRole("button", { name: "Close", exact: true }).click();
   await page.getByRole("button", { name: "My Documents", exact: true }).dblclick();
   const docs = page.getByRole("dialog", { name: "My Documents", exact: true });
