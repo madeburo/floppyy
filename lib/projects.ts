@@ -10,6 +10,15 @@ export type Project = {
 
 export const projects: Project[] = [
   {
+    slug: "recern",
+    name: "Recern",
+    description: "Workspace for your databases and vectors.",
+    status: "Online",
+    stack: ["Databases", "Vectors"],
+    site: "https://recern.net",
+    details: "Workspace for your databases and vectors.",
+  },
+  {
     slug: "usagenow",
     name: "UsageNow",
     description: "AI coding usage tracker for macOS. Limits, resets, and activity for Codex, Claude, Gemini, Grok and more",

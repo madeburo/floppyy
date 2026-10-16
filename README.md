@@ -94,8 +94,8 @@ Floppyy occasionally fights back. A few things to try — the full list lives in
 
 ## Tech Stack
 
-- **Next.js 16.3.8** — App Router, Turbopack
-- **React 19.3** — concurrent features
+- **Next.js 16.4.2** — App Router, Turbopack
+- **React 19.3.1** — concurrent features
 - **TypeScript 6.0** — strict type safety
 - **Tailwind CSS 4.3** — utility-first styling + custom Win98 CSS
 - **ESLint 10** — linting with the Next.js flat-config compatibility layer

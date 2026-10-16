@@ -12,6 +12,21 @@ test.beforeEach(async ({ page }) => {
   await expect(page.getByRole("button", { name: "Start", exact: true })).toBeVisible({ timeout: 30_000 });
 });
 
+test("Projects puts Recern first and opens its details", async ({ page }) => {
+  await page.getByRole("button", { name: "Start", exact: true }).click();
+  await page.getByRole("navigation", { name: "Start menu" }).getByRole("button", { name: "Projects", exact: true }).click();
+  const win = page.getByRole("dialog", { name: "Projects", exact: true });
+  await expect(win.locator(".grid .font-bold")).toHaveText(["Recern", "UsageNow", "Brewwery", "OpenModels"]);
+  await expect(win.getByText("Workspace for your databases and vectors.", { exact: true })).toBeVisible();
+  await expect(win.getByRole("button", { name: "Visit Site", exact: true })).toHaveCount(4);
+  await expect(win.getByRole("button", { name: "Personal", exact: true })).toBeVisible();
+  expect(await win.evaluate(node => node.scrollWidth - node.clientWidth)).toBeLessThanOrEqual(1);
+  await win.getByText("Recern", { exact: true }).dblclick();
+  const details = page.getByRole("dialog", { name: "Project Details", exact: true });
+  await expect(details.getByRole("heading", { name: "Recern", exact: true })).toBeVisible();
+  await expect(details.getByText("Workspace for your databases and vectors.", { exact: true })).toBeVisible();
+});
+
 test("Notepad protects text and Save downloads it before New", async ({ page }) => {
   await page.getByRole("button", { name: "Notepad", exact: true }).dblclick();
   const win = page.getByRole("dialog", { name: "Untitled - Notepad", exact: true });

@@ -88,10 +88,13 @@ test("retired support entries and GitHub project links are not exposed", () => {
   }
 });
 
-test("projects show UsageNow, Brewwery, and OpenModels in the requested order", () => {
-  assert.deepEqual(projects.map(project => project.name), ["UsageNow", "Brewwery", "OpenModels"]);
-  assert.deepEqual(projects.map(project => project.slug), ["usagenow", "brewwery", "openmodels"]);
-  assert.equal(projects[0].site, "https://www.usagenow.com");
-  assert.equal(projects[0].description, "AI coding usage tracker for macOS. Limits, resets, and activity for Codex, Claude, Gemini, Grok and more");
+test("projects put Recern first and preserve the existing project order", () => {
+  assert.deepEqual(projects.map(project => project.name), ["Recern", "UsageNow", "Brewwery", "OpenModels"]);
+  assert.deepEqual(projects.map(project => project.slug), ["recern", "usagenow", "brewwery", "openmodels"]);
+  assert.equal(projects[0].site, "https://recern.net");
+  assert.equal(projects[0].description, "Workspace for your databases and vectors.");
   assert.equal(projects[0].details, projects[0].description);
+  assert.equal(projects[1].site, "https://www.usagenow.com");
+  assert.equal(projects[1].description, "AI coding usage tracker for macOS. Limits, resets, and activity for Codex, Claude, Gemini, Grok and more");
+  assert.equal(projects[1].details, projects[1].description);
 });
