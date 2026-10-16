@@ -208,6 +208,10 @@ export function useWindowManager() {
     setWindows((items) => items.map((item) => ({ ...item, minimized: true })));
   }, []);
 
+  const setDocumentIdentity = useCallback((instanceId: string, title: string, payload?: string) => {
+    setWindows(items => items.map(item => item.instanceId === instanceId ? { ...item, title, payload } : item));
+  }, []);
+
   useEffect(() => {
     const updateVisualBounds = () => {
       // Pinch zoom should keep layout coordinates, never stale pre-resize bounds.
@@ -232,15 +236,22 @@ export function useWindowManager() {
 
   useEffect(() => {
     if (typeof window === "undefined") return;
-    const timer = window.setTimeout(() => {
+    const save = () => {
       try {
         const toSave = windows.filter((item) => !windowDefinitions[item.id]?.ephemeral);
         window.localStorage.setItem(STORAGE_KEY, JSON.stringify(toSave));
       } catch {
         /* ignore quota/serialization errors */
       }
-    }, SAVE_DEBOUNCE_MS);
-    return () => window.clearTimeout(timer);
+    };
+    const timer = window.setTimeout(save, SAVE_DEBOUNCE_MS);
+    window.addEventListener("pagehide", save);
+    window.addEventListener("beforeunload", save);
+    return () => {
+      window.clearTimeout(timer);
+      window.removeEventListener("pagehide", save);
+      window.removeEventListener("beforeunload", save);
+    };
   }, [windows]);
 
   const activeWindow = useMemo(
@@ -256,6 +267,7 @@ export function useWindowManager() {
     () => ({
       windows,
       registerCloseGuard,
+      setDocumentIdentity,
       activeWindow,
       openWindow,
       closeWindow,
@@ -270,6 +282,7 @@ export function useWindowManager() {
     [
       windows,
       registerCloseGuard,
+      setDocumentIdentity,
       activeWindow,
       openWindow,
       closeWindow,

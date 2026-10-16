@@ -27,7 +27,7 @@ test("Projects puts Recern first and opens its details", async ({ page }) => {
   await expect(details.getByText("Workspace for your databases and vectors.", { exact: true })).toBeVisible();
 });
 
-test("Notepad protects text and Save downloads it before New", async ({ page }) => {
+test("Notepad protects text and saves to My Documents before New", async ({ page }) => {
   await page.getByRole("button", { name: "Notepad", exact: true }).dblclick();
   const win = page.getByRole("dialog", { name: "Untitled - Notepad", exact: true });
   const editor = win.getByRole("textbox", { name: "Text editor" });
@@ -38,10 +38,15 @@ test("Notepad protects text and Save downloads it before New", async ({ page }) 
   await expect(editor).toHaveValue("Keep this regression draft.");
   await win.getByRole("button", { name: "File", exact: true }).click();
   await win.getByRole("button", { name: "New", exact: true }).click();
-  const download = page.waitForEvent("download");
   await dialog.getByRole("button", { name: "Save", exact: true }).click();
-  expect((await download).suggestedFilename()).toBe("Untitled.txt");
+  const saveAs = page.getByRole("dialog", { name: "Save to My Documents", exact: true });
+  await saveAs.getByRole("textbox", { name: "File name" }).fill("Regression.txt");
+  await saveAs.getByRole("button", { name: "Save", exact: true }).click();
   await expect(editor).toHaveValue("");
+  await win.getByRole("button", { name: "Close", exact: true }).click();
+  await page.getByRole("button", { name: "My Documents", exact: true }).dblclick();
+  await page.getByRole("button", { name: "Regression.txt", exact: true }).dblclick();
+  await expect(page.getByRole("textbox", { name: "Text editor" })).toHaveValue("Keep this regression draft.");
 });
 
 test("all Start games remain reachable and Checkers can move", async ({ page }) => {

@@ -8,7 +8,7 @@ Mostly.
 
 > The web you grew up on.
 
-![Floppyy](https://img.shields.io/badge/Floppyy-v3.8.0-008080?style=flat-square)
+![Floppyy](https://img.shields.io/badge/Floppyy-v3.9.0-008080?style=flat-square)
 ![Next.js](https://img.shields.io/badge/Next.js-16-black?style=flat-square&logo=next.js)
 ![TypeScript](https://img.shields.io/badge/TypeScript-6.0-blue?style=flat-square&logo=typescript)
 ![React](https://img.shields.io/badge/React-19-61dafb?style=flat-square&logo=react)
@@ -38,8 +38,8 @@ Just a small machine for good old internet memories.
 - Keyboard shortcuts — Ctrl+Esc (Start), Alt+F4 (close), Enter (open), Ctrl+Alt+Backspace (restart)
 
 ### Applications
-- **Notepad** — text editor with File/Edit/Search/Format menus, word wrap
-- **Paint** — drawing app with an authentic toolbox (pencil, brush, airbrush, eraser, fill, color picker, text, line, shapes), per-tool size/width options, color palette, and undo
+- **Notepad** — text editor with word wrap, automatic draft recovery, Save / Save As to My Documents, and text downloads
+- **Paint** — mouse, touch, and stylus drawing with pencil, brush, airbrush, eraser, fill, color picker, lines and shapes; size controls, color palette, undo, Fit / 100% / 200% / 400% zoom, draft recovery, and PNG files in My Documents
 - **Calculator** — functional calculator
 - **Internet Explorer** — loads real 1998 websites via Wayback Machine
 - **Netscape Navigator** — retro alternative browser
@@ -49,7 +49,8 @@ Just a small machine for good old internet memories.
 - **Norton Commander** — dual-pane file manager
 - **Windows Media Player** — video playback
 - **Winamp** — music player (frameless, authentic skin)
-- **My Computer / My Documents / Local Disk** — file system browsing
+- **My Computer / Local Disk** — retro file system browsing
+- **My Documents** — personal text and PNG files with open, rename, delete, download, and backup export / restore
 - **Projects** — portfolio browser with project details
 - **Control Panel & Display Properties** — system configuration, plus switchable wallpapers (the classic Windows 98 set: Clouds, Space, Underwater, Baseball, and more) and screensaver selection
 - **Date/Time Properties** — live clock with analog face, calendar, and time zone (double-click the taskbar clock)
@@ -101,6 +102,7 @@ Floppyy occasionally fights back. A few things to try — the full list lives in
 - **ESLint 10** — linting with the Next.js flat-config compatibility layer
 - **Web Audio API** — sound effects
 - **Canvas API** — Paint app
+- **IndexedDB** — browser-local personal files and editor drafts
 - **js-dos (DOSBox)** — in-browser MS-DOS games (DOOM, Duke Nukem 3D, Wolfenstein 3D, Dune II, WarCraft), run in an isolated iframe
 - **HTML5 Video** — Media Player
 - **Service Worker** — offline caching
@@ -138,9 +140,20 @@ npm audit
 
 Open [http://localhost:3000](http://localhost:3000) in your browser.
 
+## Personal Files
+
+Notepad and Paint save into **My Documents** using **File > Save** or **Save As**. Double-click a saved file to reopen it in its editor. **Download** saves a separate `.txt` or `.png` copy to your device. My Documents also offers rename and confirmed deletion.
+
+Edits are automatically stored as recovery drafts after text changes or completed drawing strokes. Reopening the same document restores its draft. Save commits the draft to the file; closing or replacing modified work offers Save, Don't Save, or Cancel. Existing Notepad local drafts are migrated when opened. Conflicting saves from another tab are rejected instead of silently overwriting newer files.
+
+Use **My Documents > File > Export Backup** to download a `Floppyy.floppyy.json` archive of saved personal files. **Restore Backup** validates the archive before importing; existing files stay intact and duplicate names receive a numeric suffix. Recovery drafts, built-in example files, and desktop settings are not included. Save open work before exporting.
+
+Files live only in this browser's storage for this site. They are not uploaded or synced between devices, browsers, or domains. Clearing site data, private browsing, or browser storage eviction can remove them: keep a downloaded backup. Limits are 200 files, 6 MB per file, and a 48 MB backup (including JSON overhead). Paint uses a 640 x 400 canvas. Text and selection tools remain disabled.
+
 ## Reliability and Mobile Support
 
-- Notepad keeps local drafts and offers Save, Don't Save, or Cancel before replacing or closing modified text.
+- Notepad and Paint keep local drafts and protect modified documents before close or replacement. Storage failures are shown explicitly; downloads remain available.
+- Paint supports pointer capture for mouse, touch, and stylus, including strokes that leave the canvas. Zoom changes the view without changing the image resolution; Pan moves around a zoomed canvas without drawing.
 - Games pause when their window is inactive or the browser tab is hidden. Arrow keys do not interfere with text fields.
 - Start submenus stay inside the screen; phones use a scrollable submenu with Back navigation.
 - Windows recover inside the viewport after resizing, and Solitaire sizes its cards to the available table width.

@@ -1,6 +1,6 @@
 {
   "name": "floppyy",
-  "version": "3.8.0",
+  "version": "3.9.0",
   "private": true,
   "description": "Floppyy is a retro computer in your browser.",
   "engines": {
@@ -33,6 +33,7 @@
     "@types/react-dom": "^19.3.0",
     "eslint": "^10.13.0",
     "eslint-config-next": "16.4.2",
+    "fake-indexeddb": "^6.2.6",
     "tailwindcss": "^4.3.3",
     "tsx": "^4.23.15",
     "typescript": "^6.0.3"

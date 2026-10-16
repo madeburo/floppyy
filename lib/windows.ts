@@ -81,6 +81,7 @@ export type WindowComponentProps = {
   closeWindow: (instanceId: string) => void;
   minimizeWindow?: (instanceId: string) => void;
   resizeWindow?: (instanceId: string, width: number, height: number) => void;
+  setDocumentIdentity?: (instanceId: string, title: string, payload?: string) => void;
   notify: (message: string, options?: { icon?: string; titleIcon?: string; persistent?: boolean; balloon?: boolean }) => void;
   playSound: (sound: string) => void;
   warmSound?: (sound: string) => void;

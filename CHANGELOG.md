@@ -1,5 +1,33 @@
 # Changelog
 
+## 3.9.0 - 2026-10-16
+
+### Added
+- Personal text and PNG files in My Documents, stored locally in IndexedDB with open, rename, confirmed delete, and download actions.
+- Shared Save / Save As flows for Notepad and Paint, automatic recovery drafts, and unsaved-change protection for both editors.
+- Versioned backup export and validated, non-destructive restore. Duplicate names are preserved as numbered copies.
+- Paint support for mouse, touch, and stylus drawing, pointer capture, Fit / 100% / 200% / 400% canvas zoom, and a Pan mode.
+- Storage regression tests and desktop Chromium / mobile WebKit coverage for drawing, draft recovery, saved files, and backup workflows.
+
+### Fixed
+- Paint Undo restores the immediately preceding stroke instead of skipping history.
+- Mobile My Documents hides the decorative sidebar to leave more room for files; Paint controls and palette fit narrow screens.
+- My Documents on drive C: opens the same personal files as the desktop shortcut.
+- Window sessions are flushed before reload so quickly opened editors return with their drafts.
+- Stale file saves and renames are rejected instead of silently overwriting changes from another tab.
+
+### Changed
+- Notepad Save now writes to My Documents; a separate Download action retains text export to the device.
+- Existing local Notepad drafts migrate on open. File storage errors remain visible without discarding the open document.
+- Unsupported Paint Text and Select tools are disabled.
+- Recern is first in Projects, followed by UsageNow, Brewwery, and OpenModels.
+- Updated Next.js / eslint-config-next to 16.4.2 and React / React DOM to 19.3.1, with compatible dependency updates.
+- Updated the application version, Help / Credits, README, and offline cache to 3.9.
+
+### Notes
+- Personal files are browser-local, not cloud-synced. Backups contain saved files only; save drafts before exporting and keep a backup before clearing site data.
+- This release covers Paint and personal files only. No new games or music are included.
+
 ## 3.8.0 - 2026-10-06
 
 ### Fixed

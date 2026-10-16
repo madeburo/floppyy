@@ -244,6 +244,11 @@ export function DriveWindow({ window, notify, openWindow, playSound }: WindowCom
   };
 
   const openItem = (item: DriveItem) => {
+    if (drive === "C" && item.id === "my-documents") {
+      playSound("open");
+      openWindow("documents");
+      return;
+    }
     if (drive === "C" && path === "Games") {
       const game = GAME_REGISTRY.find((game) => game.id === item.id);
       if (game) { openWindow(game.id); playSound("open"); return; }

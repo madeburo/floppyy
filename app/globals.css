@@ -1201,3 +1201,23 @@ input[type="radio"]:disabled:checked::after {
   border-left: 1px solid #008000;
   border-bottom: 1px solid #008000;
 }
+
+.documents-editor { container-type: inline-size; }
+.paint-editor { container-type: inline-size; }
+.paint-editor .status-bar { flex-shrink: 0; }
+.paint-editor .status-bar-field { min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.paint-editor .paint-actions { flex: 0 0 auto; }
+.paint-editor .paint-coords { flex: 0 0 90px; }
+.paint-editor select { border-radius: 0; }
+@container (max-width: 500px) {
+  .documents-sidebar { display: none; }
+}
+@container (max-width: 400px) {
+  .paint-coords { display: none; }
+}
+
+@media (pointer: coarse) {
+  .paint-editor aside { width: 76px; }
+  .paint-editor .paint-tool { width: 33px; height: 33px; }
+  .paint-editor .paint-swatch { height: 22px; }
+}

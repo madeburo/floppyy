@@ -650,7 +650,7 @@ export default function Desktop() {
       case "outlook":
         return <OutlookWindow {...props} />;
       case "paint":
-        return <PaintWindow {...props} />;
+        return <PaintWindow key={props.window.payload ?? "untitled"} {...props} />;
       case "run":
         return <RunWindow {...props} />;
       case "settings":
@@ -755,6 +755,7 @@ export default function Desktop() {
       minimizeWindow,
       resizeWindow,
       registerCloseGuard: wm.registerCloseGuard,
+      setDocumentIdentity: wm.setDocumentIdentity,
       notify,
       playSound,
       warmSound,
@@ -791,6 +792,7 @@ export default function Desktop() {
       minimizeWindow,
       resizeWindow,
       wm.registerCloseGuard,
+      wm.setDocumentIdentity,
       dialupDone,
       muted,
     ],

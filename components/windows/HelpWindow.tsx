@@ -89,6 +89,20 @@ export function HelpWindow({ openWindow }: WindowComponentProps) {
       ),
     },
     {
+      id: "personal-files",
+      title: "Personal Files",
+      body: (
+        <div className="space-y-[10px]">
+          <p>Notepad and Paint save personal files in <b>My Documents</b>. Use <b>File &gt; Save</b> or <b>Save As</b>, then double-click a file to reopen it.</p>
+          <p><b>Download</b> saves a separate text or PNG copy to your device. My Documents also provides Rename and Delete.</p>
+          <p>Edits are kept as recovery drafts after typing or completing a stroke. Save commits a draft to its file. Closing modified work offers Save, Don&apos;t Save, or Cancel.</p>
+          <p>Paint accepts a mouse, finger, or stylus. Zoom changes the view while keeping the canvas at 640 x 400 pixels. Pan moves around a zoomed canvas without drawing.</p>
+          <p><b>File &gt; Export Backup</b> in My Documents downloads saved files. <b>Restore Backup</b> keeps existing files and adds numbered copies for duplicate names. Save open work first: drafts are not included.</p>
+          <p className="text-[#800000]">Files stay in this browser only. Clearing site data or private browsing can erase them. Keep a downloaded backup; there is no cloud sync.</p>
+        </div>
+      ),
+    },
+    {
       id: "games",
       title: "Games",
       body: (

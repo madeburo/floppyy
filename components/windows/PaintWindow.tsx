@@ -3,6 +3,10 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { WindowComponentProps } from "@/lib/windows";
 import { PaintToolIcon } from "./PaintToolIcon";
+import { useDocumentEditor } from "@/hooks/useDocumentEditor";
+import { DocumentDialogs } from "@/components/ui/DocumentDialogs";
+import { downloadFile } from "@/lib/personalFiles";
+import { GameMenuBar } from "@/components/games/GameChrome";
 
 type Tool = "pencil" | "brush" | "eraser" | "fill" | "line" | "rect" | "filledRect" | "ellipse" | "filledEllipse" | "spray" | "picker" | "text" | "select";
 
@@ -35,8 +39,12 @@ const WIDTH_TOOLS = new Set<Tool>(["line", "rect", "filledRect", "ellipse", "fil
 
 const BRUSH_SIZES = [1, 2, 3, 5, 8];
 
-export function PaintWindow({ window: win }: WindowComponentProps) {
+export function PaintWindow(props: WindowComponentProps) {
+  const { window: win, openWindow, closeWindow } = props;
+  const editor = useDocumentEditor(props, "image");
+  const { changeContent } = editor;
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const canvasAreaRef = useRef<HTMLElement>(null);
   const overlayRef = useRef<HTMLCanvasElement>(null);
   const [tool, setTool] = useState<Tool>("pencil");
   const [color, setColor] = useState("#000000");
@@ -44,10 +52,20 @@ export function PaintWindow({ window: win }: WindowComponentProps) {
   const [brushSize, setBrushSize] = useState(2);
   const [drawing, setDrawing] = useState(false);
   const [startPos, setStartPos] = useState<{ x: number; y: number } | null>(null);
-  const [statusText, setStatusText] = useState("For Help, click Help Topics on the Help Menu.");
+  const [statusText, setStatusText] = useState("Ready");
   const [coords, setCoords] = useState("");
   const undoStack = useRef<ImageData[]>([]);
   const lastPos = useRef<{ x: number; y: number } | null>(null);
+  const activePointer = useRef<number | null>(null);
+  const initialized = useRef<number | null>(null);
+  const [zoom, setZoom] = useState("fit");
+  const [pan, setPan] = useState(false);
+  const panOrigin = useRef<{ x: number; y: number; left: number; top: number } | null>(null);
+  const [imageReady, setImageReady] = useState(false);
+
+  const commitDrawing = useCallback(() => {
+    if (canvasRef.current) changeContent(canvasRef.current.toDataURL("image/png"));
+  }, [changeContent]);
 
   const saveUndo = useCallback(() => {
     const canvas = canvasRef.current;
@@ -60,38 +78,44 @@ export function PaintWindow({ window: win }: WindowComponentProps) {
   }, []);
 
   useEffect(() => {
+    if (editor.loading || initialized.current === editor.generation) return;
     const canvas = canvasRef.current;
     if (!canvas) return;
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
+    let cancelled = false;
     ctx.fillStyle = "#ffffff";
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-    if (win.payload !== "clouds") {
-      undoStack.current = [ctx.getImageData(0, 0, canvas.width, canvas.height)];
-      return;
+    undoStack.current = [];
+    const source = editor.content || (win.payload === "clouds" && editor.generation === 0 ? "/misc/clouds-painted.png" : "");
+    if (source) {
+      const image = new Image();
+      image.onload = () => {
+        if (cancelled) return;
+        ctx.drawImage(image, 0, 0, canvas.width, canvas.height);
+        initialized.current = editor.generation;
+        setImageReady(true);
+      };
+      image.onerror = () => { if (!cancelled) { setStatusText("Could not open this image."); setImageReady(false); } };
+      image.src = source;
+    } else {
+      queueMicrotask(() => { if (!cancelled) { initialized.current = editor.generation; setImageReady(true); } });
     }
-
-    const image = new Image();
-    image.onload = () => {
-      ctx.drawImage(image, 0, 0, canvas.width, canvas.height);
-      undoStack.current = [ctx.getImageData(0, 0, canvas.width, canvas.height)];
-      setStatusText("Clouds.bmp");
-    };
-    image.src = "/misc/clouds-painted.png";
-  }, [win.payload]);
+    return () => { cancelled = true; };
+  }, [editor.content, editor.generation, editor.loading, win.payload]);
 
   const undo = useCallback(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
-    if (undoStack.current.length > 1) {
-      undoStack.current.pop();
-      const prev = undoStack.current[undoStack.current.length - 1];
+    if (undoStack.current.length > 0) {
+      const prev = undoStack.current.pop()!;
       ctx.putImageData(prev, 0, 0);
+      commitDrawing();
     }
-  }, []);
+  }, [commitDrawing]);
 
   const clearCanvas = useCallback(() => {
     const canvas = canvasRef.current;
@@ -101,34 +125,35 @@ export function PaintWindow({ window: win }: WindowComponentProps) {
     saveUndo();
     ctx.fillStyle = bgColor;
     ctx.fillRect(0, 0, canvas.width, canvas.height);
-  }, [bgColor, saveUndo]);
+    commitDrawing();
+  }, [bgColor, saveUndo, commitDrawing]);
 
   const saveImage = useCallback(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
     try {
-      const url = canvas.toDataURL("image/png");
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = "untitled.png";
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      setStatusText("Saved untitled.png to your downloads.");
+      downloadFile(editor.name, canvas.toDataURL("image/png"), "image");
+      setStatusText(`Downloaded ${editor.name}.`);
     } catch {
       setStatusText("Could not save image.");
     }
-  }, []);
+  }, [editor.name]);
 
-  const getCanvasPos = useCallback((e: React.MouseEvent<HTMLCanvasElement>) => {
+  const save = () => {
+    if (!imageReady || editor.busy) return;
+    if (!editor.content) { commitDrawing(); editor.setSaveAs(true); }
+    else editor.save();
+  };
+
+  const getCanvasPos = useCallback((e: React.PointerEvent<HTMLCanvasElement>) => {
     const canvas = canvasRef.current;
     if (!canvas) return { x: 0, y: 0 };
     const rect = canvas.getBoundingClientRect();
     const scaleX = canvas.width / rect.width;
     const scaleY = canvas.height / rect.height;
     return {
-      x: Math.floor((e.clientX - rect.left) * scaleX),
-      y: Math.floor((e.clientY - rect.top) * scaleY),
+      x: Math.max(0, Math.min(canvas.width - 1, Math.floor((e.clientX - rect.left) * scaleX))),
+      y: Math.max(0, Math.min(canvas.height - 1, Math.floor((e.clientY - rect.top) * scaleY))),
     };
   }, []);
 
@@ -213,7 +238,15 @@ export function PaintWindow({ window: win }: WindowComponentProps) {
     }
   }, [color, brushSize]);
 
-  const handleMouseDown = useCallback((e: React.MouseEvent<HTMLCanvasElement>) => {
+  const handleMouseDown = useCallback((e: React.PointerEvent<HTMLCanvasElement>) => {
+    if (!imageReady || editor.busy || activePointer.current !== null || !e.isPrimary) return;
+    e.preventDefault();
+    e.currentTarget.setPointerCapture(e.pointerId);
+    activePointer.current = e.pointerId;
+    if (pan && canvasAreaRef.current) {
+      panOrigin.current = { x: e.clientX, y: e.clientY, left: canvasAreaRef.current.scrollLeft, top: canvasAreaRef.current.scrollTop };
+      return;
+    }
     const pos = getCanvasPos(e);
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -253,13 +286,18 @@ export function PaintWindow({ window: win }: WindowComponentProps) {
     } else if (tool === "line" || tool === "rect" || tool === "filledRect" || tool === "ellipse" || tool === "filledEllipse") {
       saveUndo();
     }
-  }, [tool, color, bgColor, brushSize, getCanvasPos, saveUndo, floodFill, sprayAt]);
+  }, [tool, color, bgColor, brushSize, getCanvasPos, saveUndo, floodFill, sprayAt, imageReady, editor.busy, pan]);
 
-  const handleMouseMove = useCallback((e: React.MouseEvent<HTMLCanvasElement>) => {
+  const handleMouseMove = useCallback((e: React.PointerEvent<HTMLCanvasElement>) => {
+    if (panOrigin.current && activePointer.current === e.pointerId && canvasAreaRef.current) {
+      canvasAreaRef.current.scrollLeft = panOrigin.current.left + panOrigin.current.x - e.clientX;
+      canvasAreaRef.current.scrollTop = panOrigin.current.top + panOrigin.current.y - e.clientY;
+      return;
+    }
     const pos = getCanvasPos(e);
     setCoords(`${pos.x}, ${pos.y}px`);
 
-    if (!drawing) return;
+    if (!drawing || activePointer.current !== e.pointerId) return;
 
     const canvas = canvasRef.current;
     const overlay = overlayRef.current;
@@ -333,9 +371,11 @@ export function PaintWindow({ window: win }: WindowComponentProps) {
     }
   }, [drawing, tool, color, bgColor, brushSize, getCanvasPos, startPos, drawLine, sprayAt]);
 
-  const handleMouseUp = useCallback(() => {
-    if (!drawing) return;
+  const handleMouseUp = useCallback((event: React.PointerEvent<HTMLCanvasElement>) => {
+    if (activePointer.current !== event.pointerId) return;
+    activePointer.current = null;
     setDrawing(false);
+    if (panOrigin.current) { panOrigin.current = null; return; }
 
     const canvas = canvasRef.current;
     const overlay = overlayRef.current;
@@ -352,37 +392,57 @@ export function PaintWindow({ window: win }: WindowComponentProps) {
 
     lastPos.current = null;
     setStartPos(null);
-  }, [drawing, tool, startPos]);
+    if (tool !== "picker" && tool !== "select" && tool !== "text") commitDrawing();
+  }, [tool, startPos, commitDrawing]);
 
   const handleContextMenu = useCallback((e: React.MouseEvent) => {
     e.preventDefault();
   }, []);
 
   return (
-    <div className="flex h-full flex-col bg-[#c0c0c0] text-[11px]">
+    <div className="paint-editor relative flex h-full flex-col bg-[#c0c0c0] text-[11px]" onKeyDown={event => {
+      if (!(event.ctrlKey || event.metaKey) || event.target instanceof HTMLInputElement) return;
+      if (event.key.toLowerCase() === "s") { event.preventDefault(); save(); }
+      if (event.key.toLowerCase() === "z") { event.preventDefault(); undo(); }
+    }}>
       {/* Menu bar */}
-      <div className="window-menu-bar">
-        {["File", "Edit", "View", "Image", "Colors", "Help"].map((item) => (
-          <button key={item} className="window-menu-item">
-            <span className="underline">{item[0]}</span>{item.slice(1)}
-          </button>
-        ))}
+      <GameMenuBar items={[
+        { label: "File", menu: [
+          { label: "New", onClick: editor.newDocument },
+          { label: "Open...", onClick: () => openWindow("documents") },
+          { label: "Save", onClick: save, disabled: !imageReady || editor.busy },
+          { label: "Save As...", onClick: () => { if (!editor.content) commitDrawing(); editor.setSaveAs(true); }, disabled: !imageReady || editor.busy },
+          { label: "Download PNG", onClick: saveImage, disabled: !imageReady },
+          { label: "Exit", onClick: () => closeWindow(win.instanceId) },
+        ] },
+        { label: "Edit", menu: [{ label: "Undo", onClick: undo, disabled: !imageReady }, { label: "Clear", onClick: clearCanvas, disabled: !imageReady }] },
+      ]} />
+      <div className="flex shrink-0 items-center justify-between gap-2 border-b border-[#808080] px-2 py-1">
+        <span className="min-w-0 truncate">{editor.name}{editor.dirty ? " *" : ""}</span>
+        <div className="flex shrink-0 items-center gap-2">
+          <button className={`win-button px-1 text-[11px] ${pan ? "active" : ""}`} aria-pressed={pan} aria-label="Pan canvas" title="Pan canvas" onClick={() => setPan(value => !value)}>Pan</button>
+          <label className="flex items-center gap-1">Zoom<select aria-label="Canvas zoom" className="win-inset bg-white text-black" value={zoom} onChange={event => setZoom(event.target.value)}><option value="fit">Fit</option><option value="1">100%</option><option value="2">200%</option><option value="4">400%</option></select></label>
+        </div>
       </div>
 
       {/* Main area */}
       <div className="flex min-h-0 flex-1">
         {/* Toolbox */}
-        <aside className="w-[60px] shrink-0 border-r border-[#808080] bg-[#c0c0c0] p-[4px]">
+        <aside className="w-[60px] shrink-0 overflow-y-auto border-r border-[#808080] bg-[#c0c0c0] p-[4px]">
           <div className="grid grid-cols-2 gap-[1px]">
             {TOOLS.map((t) => (
               <button
                 key={t.id}
-                className={`flex h-[25px] w-[25px] items-center justify-center p-0 win-button ${
+                className={`paint-tool flex h-[25px] w-[25px] items-center justify-center p-0 win-button disabled:opacity-40 ${
                   tool === t.id ? "active" : ""
                 }`}
                 title={t.label}
+                aria-label={t.label}
+                aria-pressed={tool === t.id}
+                disabled={!imageReady || t.id === "text" || t.id === "select"}
                 onClick={() => {
                   setTool(t.id);
+                  setPan(false);
                   setStatusText(t.label);
                 }}
               >
@@ -434,37 +494,36 @@ export function PaintWindow({ window: win }: WindowComponentProps) {
         </aside>
 
         {/* Canvas area */}
-        <main className="relative min-w-0 flex-1 overflow-auto bg-[#808080] p-[2px]">
-          <div className="relative inline-block">
+        <main ref={canvasAreaRef} className="relative min-w-0 flex-1 overflow-auto bg-[#808080] p-[2px]" aria-label="Canvas area">
+          <div className="relative" style={{ width: zoom === "fit" ? "100%" : 640 * Number(zoom), maxWidth: zoom === "fit" ? 640 : undefined, aspectRatio: "8 / 5" }}>
             <canvas
               ref={canvasRef}
               width={640}
               height={400}
-              className="block cursor-crosshair bg-white"
-              style={{ imageRendering: "auto" }}
-              onMouseDown={handleMouseDown}
-              onMouseMove={handleMouseMove}
-              onMouseUp={handleMouseUp}
-              onMouseLeave={() => { if (drawing) handleMouseUp(); }}
+              className={`block h-full w-full touch-none bg-white ${pan ? "cursor-grab" : "cursor-crosshair"}`}
+              aria-label="Drawing canvas"
+              data-testid="paint-canvas"
+              style={{ imageRendering: zoom === "fit" ? "auto" : "pixelated" }}
+              onPointerDown={handleMouseDown}
+              onPointerMove={handleMouseMove}
+              onPointerUp={handleMouseUp}
+              onPointerCancel={handleMouseUp}
+              onLostPointerCapture={handleMouseUp}
               onContextMenu={handleContextMenu}
             />
             <canvas
               ref={overlayRef}
               width={640}
               height={400}
-              className="pointer-events-none absolute inset-0 block"
+              className="pointer-events-none absolute inset-0 block h-full w-full"
               style={{ imageRendering: "auto" }}
             />
-            {/* Resize handles */}
-            <span className="absolute -bottom-[3px] -right-[3px] h-[5px] w-[5px] bg-[#000080]" />
-            <span className="absolute -bottom-[3px] left-1/2 -translate-x-1/2 h-[5px] w-[5px] bg-[#000080]" />
-            <span className="absolute top-1/2 -right-[3px] -translate-y-1/2 h-[5px] w-[5px] bg-[#000080]" />
           </div>
         </main>
       </div>
 
       {/* Color palette */}
-      <div className="flex h-[38px] items-center border-t border-[#ffffff] bg-[#c0c0c0] px-[6px]">
+      <div className="flex min-h-[38px] shrink-0 items-center border-t border-[#ffffff] bg-[#c0c0c0] px-[6px] py-1">
         {/* Current colors indicator */}
         <div className="relative mr-[8px] h-[28px] w-[28px]">
           <div
@@ -480,11 +539,11 @@ export function PaintWindow({ window: win }: WindowComponentProps) {
         </div>
 
         {/* Color swatches */}
-        <div className="grid grid-cols-14 gap-[1px]">
+        <div className="paint-palette grid min-w-0 flex-1 grid-cols-[repeat(14,minmax(0,1fr))] gap-[1px]">
           {COLORS.map((c) => (
             <button
               key={c}
-              className="h-[14px] w-[14px] border border-[#808080]"
+              className="paint-swatch h-[14px] w-full max-w-[20px] border border-[#808080]"
               style={{ background: c }}
               aria-label={c}
               onClick={() => setColor(c)}
@@ -500,16 +559,18 @@ export function PaintWindow({ window: win }: WindowComponentProps) {
 
       {/* Status bar */}
       <div className="status-bar">
-        <p className="status-bar-field flex-[2]">{statusText}</p>
-        <p className="status-bar-field max-w-[120px] text-center">{coords}</p>
-        <p className="status-bar-field max-w-[150px] text-center">
-          <button className="text-[10px] underline" onClick={saveImage} title="Save as PNG">Save</button>
+        <p className="status-bar-field flex-[2]">{editor.loading ? "Opening..." : editor.draftStatus || statusText}</p>
+        <p className="status-bar-field paint-coords text-center">{coords}</p>
+        <p className="status-bar-field paint-actions text-center">
+          <button className="text-[10px] underline" onClick={save} disabled={!imageReady || editor.busy} title="Save to My Documents">Save</button>
           {" | "}
-          <button className="text-[10px] underline" onClick={undo} title="Undo (Ctrl+Z)">Undo</button>
+          <button className="text-[10px] underline" onClick={undo} disabled={!imageReady || editor.busy} title="Undo (Ctrl+Z)">Undo</button>
           {" | "}
-          <button className="text-[10px] underline" onClick={clearCanvas} title="Clear canvas">Clear</button>
+          <button className="text-[10px] underline" onClick={clearCanvas} disabled={!imageReady || editor.busy} title="Clear canvas">Clear</button>
         </p>
       </div>
+      {editor.error && <p role="alert" className="bg-[#ffffcc] p-2 text-[#800000]">{editor.error}</p>}
+      <DocumentDialogs editor={editor} />
     </div>
   );
 }
