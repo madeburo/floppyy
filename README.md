@@ -166,6 +166,15 @@ Run `bash scripts/deploy.sh` from the server checkout. The script requires a cle
 
 The default origin is `http://127.0.0.1:3018` (`HEALTH_URL` overrides it). Build backups are kept beside the checkout in `.floppyy-releases`; retain them until the release is verified. Cloudflare purge failure is reported separately and does not discard a healthy release. Environment files remain on the server and are never committed.
 
+Umami analytics keeps its existing website ID. Set the public tracker URLs in the private environment file before building:
+
+```dotenv
+NEXT_PUBLIC_UMAMI_SRC=https://umami.withnohype.com/mb.js
+NEXT_PUBLIC_UMAMI_RECORDER_SRC=https://umami.withnohype.com/recorder.js
+NEXT_PUBLIC_UMAMI_WEBSITE_ID=51b3c545-08e8-466b-8430-3edeeb71afdc
+```
+
+
 
 ## License
 
