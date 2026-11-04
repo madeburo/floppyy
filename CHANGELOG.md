@@ -1,5 +1,17 @@
 # Changelog
 
+## 3.9.1 - 2026-11-04
+
+### Changed
+- Updated Next.js and eslint-config-next to 16.4.5, including the upstream security fixes.
+- Updated Tailwind CSS / PostCSS to 4.3.4, ESLint to 10.14.0, Node.js type definitions to 26.6.6, and fake-indexeddb to 6.2.7.
+- Refreshed compatible transitive dependencies and the lockfile.
+- Retained React / React DOM 19.3.1, the current stable version, and kept the existing TypeScript and PostgreSQL client major versions.
+- Updated the application version, README, and offline cache to 3.9.1. No application behavior or UI changes.
+
+### Notes
+- The production dependency audit is clean. The development-only ESLint/minimatch chain still reports GHSA-g3hv-75wg-m249; incompatible forced upgrades or downgrades were not applied.
+
 ## 3.9.0 - 2026-10-16
 
 ### Added

@@ -8,7 +8,7 @@ Mostly.
 
 > The web you grew up on.
 
-![Floppyy](https://img.shields.io/badge/Floppyy-v3.9.0-008080?style=flat-square)
+![Floppyy](https://img.shields.io/badge/Floppyy-v3.9.1-008080?style=flat-square)
 ![Next.js](https://img.shields.io/badge/Next.js-16-black?style=flat-square&logo=next.js)
 ![TypeScript](https://img.shields.io/badge/TypeScript-6.0-blue?style=flat-square&logo=typescript)
 ![React](https://img.shields.io/badge/React-19-61dafb?style=flat-square&logo=react)
@@ -95,7 +95,7 @@ Floppyy occasionally fights back. A few things to try — the full list lives in
 
 ## Tech Stack
 
-- **Next.js 16.4.2** — App Router, Turbopack
+- **Next.js 16.4.5** — App Router, Turbopack
 - **React 19.3.1** — concurrent features
 - **TypeScript 6.0** — strict type safety
 - **Tailwind CSS 4.3** — utility-first styling + custom Win98 CSS
